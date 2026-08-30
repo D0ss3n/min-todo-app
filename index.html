@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#6c4cff" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="todo-icon.svg" />
+  <title>Min att-göra-lista</title>
+  <style>
+    :root { --ink:#20203a; --muted:#74748c; --paper:#fff; --bg:#f6f4ff; --purple:#6c4cff; --purple-dark:#5438d6; --green:#1a9b67; --line:#e8e5f4; --tab-bg:#eae7f7; --danger-bg:#fff1f2; --danger:#cc3e55; --shadow:0 18px 50px rgba(60, 39, 130, .12); }
+    body.night { --ink:#f5f2ff; --muted:#bcb5d5; --paper:#282442; --bg:#161326; --purple:#9b87ff; --purple-dark:#c1b5ff; --green:#57d69b; --line:#433d64; --tab-bg:#302b4d; --danger-bg:#4a2937; --danger:#ff9aaa; --shadow:0 18px 50px rgba(0, 0, 0, .3); }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; font-family:ui-rounded, "Nunito", system-ui, sans-serif; color:var(--ink); background:radial-gradient(circle at 5% 0%,#e7e0ff 0 17%,transparent 42%),radial-gradient(circle at 100% 95%,#d9fae8 0 12%,transparent 34%),var(--bg); transition:background .25s,color .25s; }
+    body.night { background:radial-gradient(circle at 5% 0%,#362967 0 17%,transparent 42%),radial-gradient(circle at 100% 95%,#174c46 0 12%,transparent 34%),var(--bg); }
+    .app { width:min(760px, calc(100% - 32px)); margin:0 auto; padding:calc(28px + env(safe-area-inset-top)) 0 calc(64px + env(safe-area-inset-bottom)); }
+    header { position:relative; text-align:center; margin-bottom:26px; }
+    h1 { font-size:clamp(2rem, 7vw, 3.2rem); margin:0; letter-spacing:-.06em; }
+    header p { margin:9px 0 0; color:var(--muted); font-size:1.05rem; }
+    .card { background:var(--paper); border:1px solid var(--line); border-radius:24px; box-shadow:var(--shadow); padding:18px; backdrop-filter:blur(10px); }
+    .theme-toggle { position:absolute; top:0; right:0; min-height:40px; padding:0 12px; background:var(--paper); color:var(--ink); border:1px solid var(--line); border-radius:12px; box-shadow:0 3px 12px rgba(60,39,130,.1); }
+    .add-row { display:grid; grid-template-columns:1fr auto; gap:10px; }
+    input { width:100%; border:2px solid var(--line); border-radius:14px; padding:15px 16px; background:var(--paper); font:inherit; color:var(--ink); outline:none; }
+    input:focus { border-color:var(--purple); box-shadow:0 0 0 4px #e7e1ff; }
+    button { border:0; border-radius:14px; padding:0 18px; min-height:52px; font:inherit; font-weight:800; cursor:pointer; transition:transform .16s, background .16s, opacity .16s; }
+    button:hover { transform:translateY(-2px); } button:active { transform:translateY(0); }
+    .add { background:var(--purple); color:white; } .add:hover { background:var(--purple-dark); }
+    .hint { margin:12px 3px 0; color:var(--muted); font-size:.88rem; }
+    .sections { margin-top:26px; }
+    .tabs { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:0 0 12px; padding:7px; border-radius:18px; background:var(--tab-bg); }
+    .tab { min-height:48px; padding:0 10px; color:var(--muted); background:transparent; border-radius:12px; }
+    .tab.active { color:var(--purple-dark); background:var(--paper); box-shadow:0 3px 10px rgba(60,39,130,.12); }
+    .section { background:var(--paper); border-radius:24px; padding:20px; box-shadow:0 8px 30px rgba(60,39,130,.07); }
+    .section[hidden] { display:none; }
+    .section-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+    h2 { font-size:1.15rem; margin:0; }
+    .count { background:var(--tab-bg); color:var(--purple-dark); border-radius:999px; padding:4px 10px; font-size:.82rem; font-weight:800; }
+    ul { padding:0; margin:0; list-style:none; display:grid; gap:10px; }
+    .task { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:12px; min-height:60px; padding:9px 10px; border:1px solid var(--line); border-radius:16px; }
+    .toggle { width:30px; height:30px; min-height:30px; padding:0; border:2px solid #c8c2e4; border-radius:10px; background:var(--paper); color:white; font-size:1rem; }
+    .toggle:hover { border-color:var(--green); }
+    .task.done .toggle { background:var(--green); border-color:var(--green); }
+    .task-text { font-weight:700; overflow-wrap:anywhere; }
+    .task.done .task-text { text-decoration:line-through; color:var(--muted); }
+    .delete { min-height:38px; padding:0 11px; background:var(--danger-bg); color:var(--danger); border-radius:10px; font-size:.85rem; }
+    .delete:hover { opacity:.82; }
+    .empty { margin:8px 0; padding:18px 10px; color:var(--muted); text-align:center; }
+    .footer { color:var(--muted); text-align:center; margin:22px 0 0; font-size:.86rem; }
+    @media (max-width:460px) { .app { width:min(100% - 22px,760px); padding-top:calc(20px + env(safe-area-inset-top)); } .theme-toggle { position:static; margin-bottom:18px; } .add-row { grid-template-columns:1fr; } .add { min-height:52px; } .section { padding:16px; } .task { grid-template-columns:auto 1fr; } .delete { grid-column:2; justify-self:start; } }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header><button class="theme-toggle" id="theme-toggle" type="button" aria-label="Växla till nattläge">🌙 Nattläge</button><h1>✨ Min att-göra-lista</h1><p>Små steg, stor känsla av klart! 🌟</p></header>
+    <section class="card" aria-label="Lägg till uppgift">
+      <form id="task-form" class="add-row"><input id="task-input" maxlength="180" autocomplete="off" placeholder="Vad vill du få gjort?" aria-label="Ny uppgift" required /><button class="add" type="submit">➕ Lägg till</button></form>
+      <p class="hint">Tryck Enter eller på ”Lägg till” för att spara uppgiften.</p>
+    </section>
+    <div class="sections">
+      <nav class="tabs" aria-label="Välj kategori">
+        <button class="tab active" type="button" data-tab="active" aria-selected="true">📋 Ej utförda <span class="count" id="active-count">0</span></button>
+        <button class="tab" type="button" data-tab="done" aria-selected="false">✅ Utförda <span class="count" id="done-count">0</span></button>
+      </nav>
+      <section class="section" id="active-section"><div class="section-head"><h2>📋 Ej utförda</h2></div><ul id="active-list"></ul><p class="empty" id="active-empty">Inga uppgifter ännu — börja med en ovan! 🚀</p></section>
+      <section class="section" id="done-section" hidden><div class="section-head"><h2>✅ Utförda</h2></div><ul id="done-list"></ul><p class="empty" id="done-empty">Avbockade uppgifter hamnar här. 🙌</p></section>
+    </div>
+    <p class="footer">Dina uppgifter sparas automatiskt i den här webbläsaren. 💜</p>
+  </main>
+  <script>
+    const key = 'emoji-todo-list-v1', themeKey = 'emoji-todo-theme-v1';
+    let tasks = JSON.parse(localStorage.getItem(key) || '[]');
+    const activeList = document.querySelector('#active-list'), doneList = document.querySelector('#done-list');
+    let selectedTab = 'active';
+    function setTheme(theme) {
+      const night = theme === 'night';
+      document.body.classList.toggle('night', night);
+      const button = document.querySelector('#theme-toggle');
+      button.textContent = night ? '☀️ Dagläge' : '🌙 Nattläge';
+      button.setAttribute('aria-label', night ? 'Växla till dagläge' : 'Växla till nattläge');
+      localStorage.setItem(themeKey, theme);
+    }
+    function selectTab(tab) {
+      selectedTab = tab;
+      document.querySelector('#active-section').hidden = tab !== 'active';
+      document.querySelector('#done-section').hidden = tab !== 'done';
+      document.querySelectorAll('.tab').forEach(button => {
+        const active = button.dataset.tab === tab;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-selected', active);
+      });
+    }
+    function save() { localStorage.setItem(key, JSON.stringify(tasks)); }
+    function render() {
+      activeList.replaceChildren(); doneList.replaceChildren();
+      const active = tasks.filter(t => !t.done), done = tasks.filter(t => t.done);
+      document.querySelector('#active-count').textContent = active.length;
+      document.querySelector('#done-count').textContent = done.length;
+      document.querySelector('#active-empty').hidden = active.length > 0;
+      document.querySelector('#done-empty').hidden = done.length > 0;
+      [...active, ...done].forEach(task => {
+        const item = document.createElement('li'); item.className = `task${task.done ? ' done' : ''}`;
+        const toggle = document.createElement('button'); toggle.className = 'toggle'; toggle.type = 'button'; toggle.setAttribute('aria-label', task.done ? 'Markera som ej utförd' : 'Markera som utförd'); toggle.textContent = task.done ? '✓' : '';
+        toggle.onclick = () => { task.done = !task.done; save(); render(); };
+        const text = document.createElement('span'); text.className = 'task-text'; text.textContent = task.text;
+        const remove = document.createElement('button'); remove.className = 'delete'; remove.type = 'button'; remove.textContent = '🗑️ Ta bort'; remove.onclick = () => { tasks = tasks.filter(t => t.id !== task.id); save(); render(); };
+        item.append(toggle, text, remove); (task.done ? doneList : activeList).append(item);
+      });
+    }
+    document.querySelector('#task-form').addEventListener('submit', e => {
+      e.preventDefault(); const input = document.querySelector('#task-input'); const text = input.value.trim();
+      if (!text) return; tasks.unshift({ id: crypto.randomUUID(), text, done:false }); save(); input.value = ''; render();
+    });
+    document.querySelectorAll('.tab').forEach(button => button.addEventListener('click', () => selectTab(button.dataset.tab)));
+    document.querySelector('#theme-toggle').addEventListener('click', () => setTheme(document.body.classList.contains('night') ? 'day' : 'night'));
+    setTheme(localStorage.getItem(themeKey) || 'day');
+    if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+    render();
+  </script>
+</body>
+</html>
