@@ -10,8 +10,8 @@
   <link rel="apple-touch-icon" href="todo-icon.svg" />
   <title>Min att-göra-lista</title>
   <style>
-    :root { --ink:#20203a; --muted:#74748c; --paper:#fff; --bg:#f6f4ff; --purple:#6c4cff; --purple-dark:#5438d6; --green:#1a9b67; --line:#e8e5f4; --tab-bg:#eae7f7; --danger-bg:#fff1f2; --danger:#cc3e55; --shadow:0 18px 50px rgba(60, 39, 130, .12); }
-    body.night { --ink:#f5f2ff; --muted:#bcb5d5; --paper:#282442; --bg:#161326; --purple:#9b87ff; --purple-dark:#c1b5ff; --green:#57d69b; --line:#433d64; --tab-bg:#302b4d; --danger-bg:#4a2937; --danger:#ff9aaa; --shadow:0 18px 50px rgba(0, 0, 0, .3); }
+    :root { --ink:#20203a; --muted:#74748c; --paper:#fff; --bg:#f6f4ff; --purple:#6c4cff; --purple-dark:#5438d6; --green:#1a9b67; --line:#e8e5f4; --tab-bg:#eae7f7; --danger-bg:#fff1f2; --danger:#cc3e55; --restore-bg:#e4f8ee; --restore:#17764f; --shadow:0 18px 50px rgba(60, 39, 130, .12); }
+    body.night { --ink:#f5f2ff; --muted:#bcb5d5; --paper:#282442; --bg:#161326; --purple:#9b87ff; --purple-dark:#c1b5ff; --green:#57d69b; --line:#433d64; --tab-bg:#302b4d; --danger-bg:#4a2937; --danger:#ff9aaa; --restore-bg:#204c3c; --restore:#8aebbb; --shadow:0 18px 50px rgba(0, 0, 0, .3); }
     * { box-sizing:border-box; }
     body { margin:0; min-height:100vh; font-family:ui-rounded, "Nunito", system-ui, sans-serif; color:var(--ink); background:radial-gradient(circle at 5% 0%,#e7e0ff 0 17%,transparent 42%),radial-gradient(circle at 100% 95%,#d9fae8 0 12%,transparent 34%),var(--bg); transition:background .25s,color .25s; }
     body.night { background:radial-gradient(circle at 5% 0%,#362967 0 17%,transparent 42%),radial-gradient(circle at 100% 95%,#174c46 0 12%,transparent 34%),var(--bg); }
@@ -40,6 +40,7 @@
     .count { background:var(--tab-bg); color:var(--purple-dark); border-radius:999px; padding:4px 10px; font-size:.82rem; font-weight:800; }
     ul { padding:0; margin:0; list-style:none; display:grid; gap:10px; }
     .task { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:12px; min-height:60px; padding:9px 10px; border:1px solid var(--line); border-radius:16px; }
+    .task-actions { display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:wrap; }
     .toggle { width:30px; height:30px; min-height:30px; padding:0; border:2px solid #c8c2e4; border-radius:10px; background:var(--paper); color:white; font-size:1rem; }
     .toggle:hover { border-color:var(--green); }
     .task.done .toggle { background:var(--green); border-color:var(--green); }
@@ -47,11 +48,13 @@
     .task.done .task-text { text-decoration:line-through; color:var(--muted); }
     .complete { min-height:44px; padding:0 14px; color:white; background:var(--green); font-size:.9rem; }
     .complete:disabled { cursor:not-allowed; opacity:.45; transform:none; }
+    .restore { min-height:38px; padding:0 11px; background:var(--restore-bg); color:var(--restore); border-radius:10px; font-size:.85rem; }
+    .restore:hover { opacity:.82; }
     .delete { min-height:38px; padding:0 11px; background:var(--danger-bg); color:var(--danger); border-radius:10px; font-size:.85rem; }
     .delete:hover { opacity:.82; }
     .empty { margin:8px 0; padding:18px 10px; color:var(--muted); text-align:center; }
     .footer { color:var(--muted); text-align:center; margin:22px 0 0; font-size:.86rem; }
-    @media (max-width:460px) { .app { width:min(100% - 22px,760px); padding-top:calc(20px + env(safe-area-inset-top)); } .theme-toggle { position:static; margin-bottom:18px; } .add-row { grid-template-columns:1fr; } .add { min-height:52px; } .section { padding:16px; } .task { grid-template-columns:auto 1fr; } .delete { grid-column:2; justify-self:start; } }
+    @media (max-width:460px) { .app { width:min(100% - 22px,760px); padding-top:calc(20px + env(safe-area-inset-top)); } .theme-toggle { position:static; margin-bottom:18px; } .add-row { grid-template-columns:1fr; } .add { min-height:52px; } .section { padding:16px; } .task { grid-template-columns:auto 1fr; } .task-actions { grid-column:2; justify-self:start; justify-content:flex-start; } }
   </style>
 </head>
 <body>
@@ -112,8 +115,14 @@
         const toggle = document.createElement('button'); toggle.className = 'toggle'; toggle.type = 'button'; toggle.setAttribute('aria-label', task.done ? 'Utförd' : 'Markera som klar'); toggle.textContent = task.done || task.marked ? '✓' : '';
         if (task.done) { toggle.disabled = true; } else { toggle.onclick = () => { task.marked = !task.marked; save(); render(); }; }
         const text = document.createElement('span'); text.className = 'task-text'; text.textContent = task.text;
+        const actions = document.createElement('div'); actions.className = 'task-actions';
+        if (task.done) {
+          const restore = document.createElement('button'); restore.className = 'restore'; restore.type = 'button'; restore.textContent = '↩ Återställ'; restore.setAttribute('aria-label', 'Flytta tillbaka till ej utförda');
+          restore.onclick = () => { task.done = false; task.marked = false; save(); render(); selectTab('active'); };
+          actions.append(restore);
+        }
         const remove = document.createElement('button'); remove.className = 'delete'; remove.type = 'button'; remove.textContent = '🗑️ Ta bort'; remove.onclick = () => { tasks = tasks.filter(t => t.id !== task.id); save(); render(); };
-        item.append(toggle, text, remove); (task.done ? doneList : activeList).append(item);
+        actions.append(remove); item.append(toggle, text, actions); (task.done ? doneList : activeList).append(item);
       });
     }
     document.querySelector('#task-form').addEventListener('submit', e => {
