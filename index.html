@@ -35,6 +35,7 @@
     .section { background:var(--paper); border-radius:24px; padding:20px; box-shadow:0 8px 30px rgba(60,39,130,.07); }
     .section[hidden] { display:none; }
     .section-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+    .section-actions { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 14px; }
     h2 { font-size:1.15rem; margin:0; }
     .count { background:var(--tab-bg); color:var(--purple-dark); border-radius:999px; padding:4px 10px; font-size:.82rem; font-weight:800; }
     ul { padding:0; margin:0; list-style:none; display:grid; gap:10px; }
@@ -44,6 +45,8 @@
     .task.done .toggle { background:var(--green); border-color:var(--green); }
     .task-text { font-weight:700; overflow-wrap:anywhere; }
     .task.done .task-text { text-decoration:line-through; color:var(--muted); }
+    .complete { min-height:44px; padding:0 14px; color:white; background:var(--green); font-size:.9rem; }
+    .complete:disabled { cursor:not-allowed; opacity:.45; transform:none; }
     .delete { min-height:38px; padding:0 11px; background:var(--danger-bg); color:var(--danger); border-radius:10px; font-size:.85rem; }
     .delete:hover { opacity:.82; }
     .empty { margin:8px 0; padding:18px 10px; color:var(--muted); text-align:center; }
@@ -63,14 +66,14 @@
         <button class="tab active" type="button" data-tab="active" aria-selected="true">📋 Ej utförda <span class="count" id="active-count">0</span></button>
         <button class="tab" type="button" data-tab="done" aria-selected="false">✅ Utförda <span class="count" id="done-count">0</span></button>
       </nav>
-      <section class="section" id="active-section"><div class="section-head"><h2>📋 Ej utförda</h2></div><ul id="active-list"></ul><p class="empty" id="active-empty">Inga uppgifter ännu — börja med en ovan! 🚀</p></section>
+      <section class="section" id="active-section"><div class="section-head"><h2>📋 Ej utförda</h2></div><div class="section-actions"><span class="hint" id="marked-message">Markera klara uppgifter i rutan.</span><button class="complete" id="complete-selected" type="button" disabled>✅ Flytta till utförda</button></div><ul id="active-list"></ul><p class="empty" id="active-empty">Inga uppgifter ännu — börja med en ovan! 🚀</p></section>
       <section class="section" id="done-section" hidden><div class="section-head"><h2>✅ Utförda</h2></div><ul id="done-list"></ul><p class="empty" id="done-empty">Avbockade uppgifter hamnar här. 🙌</p></section>
     </div>
     <p class="footer">Dina uppgifter sparas automatiskt i den här webbläsaren. 💜</p>
   </main>
   <script>
     const key = 'emoji-todo-list-v1', themeKey = 'emoji-todo-theme-v1';
-    let tasks = JSON.parse(localStorage.getItem(key) || '[]');
+    let tasks = JSON.parse(localStorage.getItem(key) || '[]').map(task => ({ ...task, marked: task.marked || false }));
     const activeList = document.querySelector('#active-list'), doneList = document.querySelector('#done-list');
     let selectedTab = 'active';
     function setTheme(theme) {
@@ -95,14 +98,19 @@
     function render() {
       activeList.replaceChildren(); doneList.replaceChildren();
       const active = tasks.filter(t => !t.done), done = tasks.filter(t => t.done);
+      const marked = active.filter(t => t.marked);
       document.querySelector('#active-count').textContent = active.length;
       document.querySelector('#done-count').textContent = done.length;
+      const completeButton = document.querySelector('#complete-selected');
+      completeButton.disabled = marked.length === 0;
+      completeButton.textContent = marked.length ? `✅ Flytta ${marked.length} till utförda` : '✅ Flytta till utförda';
+      document.querySelector('#marked-message').textContent = marked.length ? `${marked.length} uppgift${marked.length === 1 ? '' : 'er'} markerad${marked.length === 1 ? '' : 'e'}. Godkänn när du är klar.` : 'Markera klara uppgifter i rutan.';
       document.querySelector('#active-empty').hidden = active.length > 0;
       document.querySelector('#done-empty').hidden = done.length > 0;
       [...active, ...done].forEach(task => {
         const item = document.createElement('li'); item.className = `task${task.done ? ' done' : ''}`;
-        const toggle = document.createElement('button'); toggle.className = 'toggle'; toggle.type = 'button'; toggle.setAttribute('aria-label', task.done ? 'Markera som ej utförd' : 'Markera som utförd'); toggle.textContent = task.done ? '✓' : '';
-        toggle.onclick = () => { task.done = !task.done; save(); render(); };
+        const toggle = document.createElement('button'); toggle.className = 'toggle'; toggle.type = 'button'; toggle.setAttribute('aria-label', task.done ? 'Utförd' : 'Markera som klar'); toggle.textContent = task.done || task.marked ? '✓' : '';
+        if (task.done) { toggle.disabled = true; } else { toggle.onclick = () => { task.marked = !task.marked; save(); render(); }; }
         const text = document.createElement('span'); text.className = 'task-text'; text.textContent = task.text;
         const remove = document.createElement('button'); remove.className = 'delete'; remove.type = 'button'; remove.textContent = '🗑️ Ta bort'; remove.onclick = () => { tasks = tasks.filter(t => t.id !== task.id); save(); render(); };
         item.append(toggle, text, remove); (task.done ? doneList : activeList).append(item);
@@ -110,7 +118,11 @@
     }
     document.querySelector('#task-form').addEventListener('submit', e => {
       e.preventDefault(); const input = document.querySelector('#task-input'); const text = input.value.trim();
-      if (!text) return; tasks.unshift({ id: crypto.randomUUID(), text, done:false }); save(); input.value = ''; render();
+      if (!text) return; tasks.unshift({ id: crypto.randomUUID(), text, done:false, marked:false }); save(); input.value = ''; render();
+    });
+    document.querySelector('#complete-selected').addEventListener('click', () => {
+      tasks.forEach(task => { if (!task.done && task.marked) { task.done = true; task.marked = false; } });
+      save(); render(); selectTab('done');
     });
     document.querySelectorAll('.tab').forEach(button => button.addEventListener('click', () => selectTab(button.dataset.tab)));
     document.querySelector('#theme-toggle').addEventListener('click', () => setTheme(document.body.classList.contains('night') ? 'day' : 'night'));
