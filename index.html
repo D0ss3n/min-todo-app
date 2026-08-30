@@ -112,8 +112,8 @@
       document.querySelector('#done-empty').hidden = done.length > 0;
       [...active, ...done].forEach(task => {
         const item = document.createElement('li'); item.className = `task${task.done ? ' done' : ''}`;
-        const toggle = document.createElement('button'); toggle.className = 'toggle'; toggle.type = 'button'; toggle.setAttribute('aria-label', task.done ? 'Utförd' : 'Markera som klar'); toggle.textContent = task.done || task.marked ? '✓' : '';
-        if (task.done) { toggle.disabled = true; } else { toggle.onclick = () => { task.marked = !task.marked; save(); render(); }; }
+        const toggle = document.createElement('button'); toggle.className = 'toggle'; toggle.type = 'button'; toggle.setAttribute('aria-label', task.done ? 'Markera som ej utförd' : 'Markera som klar'); toggle.textContent = task.done || task.marked ? '✓' : '';
+        if (task.done) { toggle.onclick = () => { task.done = false; task.marked = false; save(); render(); selectTab('active'); }; } else { toggle.onclick = () => { task.marked = !task.marked; save(); render(); }; }
         const text = document.createElement('span'); text.className = 'task-text'; text.textContent = task.text;
         const actions = document.createElement('div'); actions.className = 'task-actions';
         if (task.done) {
