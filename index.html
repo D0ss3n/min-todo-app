@@ -118,8 +118,11 @@
         toggle.onclick = () => { task.marked = !task.marked; save(); render(); };
         const text = document.createElement('span'); text.className = 'task-text'; text.textContent = task.text;
         const actions = document.createElement('div'); actions.className = 'task-actions';
-        const remove = document.createElement('button'); remove.className = 'delete'; remove.type = 'button'; remove.textContent = '🗑️ Ta bort'; remove.onclick = () => { tasks = tasks.filter(t => t.id !== task.id); save(); render(); };
-        actions.append(remove); item.append(toggle, text, actions); (task.done ? doneList : activeList).append(item);
+        if (!task.done) {
+          const remove = document.createElement('button'); remove.className = 'delete'; remove.type = 'button'; remove.textContent = '🗑️ Ta bort'; remove.onclick = () => { tasks = tasks.filter(t => t.id !== task.id); save(); render(); };
+          actions.append(remove);
+        }
+        item.append(toggle, text); if (actions.childElementCount) item.append(actions); (task.done ? doneList : activeList).append(item);
       });
     }
     document.querySelector('#task-form').addEventListener('submit', e => {
