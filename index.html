@@ -36,11 +36,11 @@
     .section[hidden] { display:none; }
     .section-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
     .section-actions { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 14px; }
+    .bulk-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
     h2 { font-size:1.15rem; margin:0; }
     .count { background:var(--tab-bg); color:var(--purple-dark); border-radius:999px; padding:4px 10px; font-size:.82rem; font-weight:800; }
     ul { padding:0; margin:0; list-style:none; display:grid; gap:10px; }
     .task { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:12px; min-height:60px; padding:9px 10px; border:1px solid var(--line); border-radius:16px; }
-    .task-actions { display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:wrap; }
     .toggle { width:30px; height:30px; min-height:30px; padding:0; border:2px solid #c8c2e4; border-radius:10px; background:var(--paper); color:white; font-size:1rem; }
     .toggle:hover { border-color:var(--green); }
     .task.marked .toggle { background:var(--green); border-color:var(--green); }
@@ -48,11 +48,13 @@
     .task.done .task-text { text-decoration:line-through; color:var(--muted); }
     .complete { min-height:44px; padding:0 14px; color:white; background:var(--green); font-size:.9rem; }
     .complete:disabled { cursor:not-allowed; opacity:.45; transform:none; }
+    .bulk-delete { min-height:44px; padding:0 14px; }
+    .bulk-delete:disabled { cursor:not-allowed; opacity:.45; transform:none; }
     .delete { min-height:38px; padding:0 11px; background:var(--danger-bg); color:var(--danger); border-radius:10px; font-size:.85rem; }
     .delete:hover { opacity:.82; }
     .empty { margin:8px 0; padding:18px 10px; color:var(--muted); text-align:center; }
     .footer { color:var(--muted); text-align:center; margin:22px 0 0; font-size:.86rem; }
-    @media (max-width:460px) { .app { width:min(100% - 22px,760px); padding-top:calc(20px + env(safe-area-inset-top)); } .theme-toggle { position:static; margin-bottom:18px; } .add-row { grid-template-columns:1fr; } .add { min-height:52px; } .section { padding:16px; } .task { grid-template-columns:auto 1fr; } .task-actions { grid-column:2; justify-self:start; justify-content:flex-start; } }
+    @media (max-width:460px) { .app { width:min(100% - 22px,760px); padding-top:calc(20px + env(safe-area-inset-top)); } .theme-toggle { position:static; margin-bottom:18px; } .add-row { grid-template-columns:1fr; } .add { min-height:52px; } .section { padding:16px; } .section-actions { align-items:flex-start; flex-direction:column; } .bulk-actions { width:100%; display:grid; grid-template-columns:1fr 1fr; } .task { grid-template-columns:auto 1fr; } }
   </style>
 </head>
 <body>
@@ -67,7 +69,7 @@
         <button class="tab active" type="button" data-tab="active" aria-selected="true">📋 Ej utförda <span class="count" id="active-count">0</span></button>
         <button class="tab" type="button" data-tab="done" aria-selected="false">✅ Utförda <span class="count" id="done-count">0</span></button>
       </nav>
-      <section class="section" id="active-section"><div class="section-head"><h2>📋 Ej utförda</h2></div><div class="section-actions"><span class="hint" id="marked-message">Markera klara uppgifter i rutan.</span><button class="complete" id="complete-selected" type="button" disabled>✅ Flytta till utförda</button></div><ul id="active-list"></ul><p class="empty" id="active-empty">Inga uppgifter ännu — börja med en ovan! 🚀</p></section>
+      <section class="section" id="active-section"><div class="section-head"><h2>📋 Ej utförda</h2></div><div class="section-actions"><span class="hint" id="marked-message">Markera klara uppgifter i rutan.</span><div class="bulk-actions"><button class="complete" id="complete-selected" type="button" disabled>✅ Flytta till utförda</button><button class="delete bulk-delete" id="delete-selected" type="button" disabled>🗑️ Ta bort</button></div></div><ul id="active-list"></ul><p class="empty" id="active-empty">Inga uppgifter ännu — börja med en ovan! 🚀</p></section>
       <section class="section" id="done-section" hidden><div class="section-head"><h2>✅ Utförda</h2></div><div class="section-actions"><span class="hint" id="return-message">Markera uppgifter som ska tillbaka.</span><button class="complete" id="return-selected" type="button" disabled>↩ Flytta till ej utförda</button></div><ul id="done-list"></ul><p class="empty" id="done-empty">Avbockade uppgifter hamnar här. 🙌</p></section>
     </div>
     <p class="footer">Dina uppgifter sparas automatiskt i den här webbläsaren. 💜</p>
@@ -103,8 +105,11 @@
       document.querySelector('#active-count').textContent = active.length;
       document.querySelector('#done-count').textContent = done.length;
       const completeButton = document.querySelector('#complete-selected');
+      const deleteButton = document.querySelector('#delete-selected');
       completeButton.disabled = marked.length === 0;
+      deleteButton.disabled = marked.length === 0;
       completeButton.textContent = marked.length ? `✅ Flytta ${marked.length} till utförda` : '✅ Flytta till utförda';
+      deleteButton.textContent = marked.length ? `🗑️ Ta bort ${marked.length}` : '🗑️ Ta bort';
       document.querySelector('#marked-message').textContent = marked.length ? `${marked.length} uppgift${marked.length === 1 ? '' : 'er'} markerad${marked.length === 1 ? '' : 'e'}. Godkänn när du är klar.` : 'Markera klara uppgifter i rutan.';
       const returnButton = document.querySelector('#return-selected');
       returnButton.disabled = markedDone.length === 0;
@@ -117,12 +122,7 @@
         const toggle = document.createElement('button'); toggle.className = 'toggle'; toggle.type = 'button'; toggle.setAttribute('aria-label', task.done ? 'Markera för att flytta tillbaka' : 'Markera som klar'); toggle.textContent = task.marked ? '✓' : '';
         toggle.onclick = () => { task.marked = !task.marked; save(); render(); };
         const text = document.createElement('span'); text.className = 'task-text'; text.textContent = task.text;
-        const actions = document.createElement('div'); actions.className = 'task-actions';
-        if (!task.done) {
-          const remove = document.createElement('button'); remove.className = 'delete'; remove.type = 'button'; remove.textContent = '🗑️ Ta bort'; remove.onclick = () => { tasks = tasks.filter(t => t.id !== task.id); save(); render(); };
-          actions.append(remove);
-        }
-        item.append(toggle, text); if (actions.childElementCount) item.append(actions); (task.done ? doneList : activeList).append(item);
+        item.append(toggle, text); (task.done ? doneList : activeList).append(item);
       });
     }
     document.querySelector('#task-form').addEventListener('submit', e => {
@@ -132,6 +132,11 @@
     document.querySelector('#complete-selected').addEventListener('click', () => {
       tasks.forEach(task => { if (!task.done && task.marked) { task.done = true; task.marked = false; } });
       save(); render(); selectTab('done');
+    });
+    document.querySelector('#delete-selected').addEventListener('click', () => {
+      const markedCount = tasks.filter(task => !task.done && task.marked).length;
+      if (!markedCount || !window.confirm(`Ta bort ${markedCount} markerad${markedCount === 1 ? '' : 'e'} uppgift${markedCount === 1 ? '' : 'er'}?`)) return;
+      tasks = tasks.filter(task => task.done || !task.marked); save(); render();
     });
     document.querySelector('#return-selected').addEventListener('click', () => {
       tasks.forEach(task => { if (task.done && task.marked) { task.done = false; task.marked = false; } });
