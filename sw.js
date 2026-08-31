@@ -1,4 +1,4 @@
-const CACHE = 'todo-app-v17';
+const CACHE = 'todo-app-v18';
 const FILES = ['./manifest.json', './todo-icon.svg'];
 
 self.addEventListener('install', event => event.waitUntil(

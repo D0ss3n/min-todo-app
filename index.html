@@ -72,7 +72,7 @@
         <button class="tab" type="button" data-tab="done" aria-selected="false">✅ Utförda <span class="count" id="done-count">0</span></button>
       </nav>
       <section class="section" id="active-section"><div class="section-head"><h2>📋 Ej utförda</h2></div><div class="section-actions"><span class="hint" id="marked-message">Markera klara uppgifter i rutan.</span><div class="bulk-actions"><button class="complete" id="complete-selected" type="button" disabled>✅ Flytta till utförda</button><button class="delete bulk-delete" id="delete-selected" type="button" disabled>🗑️ Ta bort</button></div></div><ul id="active-list"></ul><p class="empty" id="active-empty">Inga uppgifter ännu — börja med en ovan! 🚀</p></section>
-      <section class="section" id="done-section" hidden><div class="section-head"><h2>✅ Utförda</h2></div><div class="section-actions"><span class="hint" id="return-message">Markera uppgifter som ska tillbaka.</span><button class="complete" id="return-selected" type="button" disabled>↩ Flytta till ej utförda</button></div><ul id="done-list"></ul><p class="empty" id="done-empty">Avbockade uppgifter hamnar här. 🙌</p></section>
+      <section class="section" id="done-section" hidden><div class="section-head"><h2>✅ Utförda</h2></div><div class="section-actions"><span class="hint" id="return-message">Markera uppgifter som ska tillbaka.</span><div class="bulk-actions"><button class="complete" id="return-selected" type="button" disabled>↩ Flytta till ej utförda</button><button class="delete bulk-delete" id="delete-done-selected" type="button" disabled>🗑️ Ta bort</button></div></div><ul id="done-list"></ul><p class="empty" id="done-empty">Avbockade uppgifter hamnar här. 🙌</p></section>
     </div>
     <p class="footer">Dina uppgifter sparas automatiskt i den här webbläsaren. 💜</p>
   </main>
@@ -122,8 +122,11 @@
       deleteButton.textContent = marked.length ? `🗑️ Ta bort ${marked.length}` : '🗑️ Ta bort';
       document.querySelector('#marked-message').textContent = marked.length ? `${marked.length} uppgift${marked.length === 1 ? '' : 'er'} markerad${marked.length === 1 ? '' : 'e'}. Godkänn när du är klar.` : 'Markera klara uppgifter i rutan.';
       const returnButton = document.querySelector('#return-selected');
+      const deleteDoneButton = document.querySelector('#delete-done-selected');
       returnButton.disabled = markedDone.length === 0;
+      deleteDoneButton.disabled = markedDone.length === 0;
       returnButton.textContent = markedDone.length ? `↩ Flytta ${markedDone.length} till ej utförda` : '↩ Flytta till ej utförda';
+      deleteDoneButton.textContent = markedDone.length ? `🗑️ Ta bort ${markedDone.length}` : '🗑️ Ta bort';
       document.querySelector('#return-message').textContent = markedDone.length ? `${markedDone.length} uppgift${markedDone.length === 1 ? '' : 'er'} markerad${markedDone.length === 1 ? '' : 'e'}. Flytta tillbaka när du är klar.` : 'Markera uppgifter som ska tillbaka.';
       document.querySelector('#active-empty').hidden = active.length > 0;
       document.querySelector('#done-empty').hidden = done.length > 0;
@@ -151,6 +154,11 @@
     document.querySelector('#return-selected').addEventListener('click', () => {
       tasks.forEach(task => { if (task.done && task.marked) { task.done = false; task.marked = false; } });
       save(); render();
+    });
+    document.querySelector('#delete-done-selected').addEventListener('click', () => {
+      const markedCount = tasks.filter(task => task.done && task.marked).length;
+      if (!markedCount || !window.confirm(`Ta bort ${markedCount} markerad${markedCount === 1 ? '' : 'e'} utförd uppgift${markedCount === 1 ? '' : 'er'}?`)) return;
+      tasks = tasks.filter(task => !task.done || !task.marked); save(); render();
     });
     document.querySelectorAll('.tab').forEach(button => button.addEventListener('click', () => selectTab(button.dataset.tab)));
     document.querySelector('#theme-toggle').addEventListener('click', () => setTheme(document.body.classList.contains('night') ? 'day' : 'night'));
