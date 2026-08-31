@@ -59,7 +59,7 @@
 </head>
 <body>
   <main class="app">
-    <header><button class="theme-toggle" id="theme-toggle" type="button" aria-label="Växla till nattläge">🌙 Nattläge</button><h1>✨ Att göra lista</h1><p>Små steg, stor känsla av klart! 🌟</p></header>
+    <header><button class="theme-toggle" id="theme-toggle" type="button" aria-label="Växla till nattläge">🌙 Nattläge</button><h1>Att göra lista</h1><p id="subtitle"></p></header>
     <section class="card" aria-label="Lägg till uppgift">
       <form id="task-form" class="add-row"><input id="task-input" maxlength="180" autocomplete="off" placeholder="Vad vill du få gjort idag?" aria-label="Ny uppgift" required /><button class="add" type="submit">➕ Lägg till</button></form>
       <p class="hint">Tryck Enter eller på ”Lägg till” för att spara uppgiften.</p>
@@ -75,10 +75,18 @@
     <p class="footer">Dina uppgifter sparas automatiskt i den här webbläsaren. 💜</p>
   </main>
   <script>
-    const key = 'emoji-todo-list-v1', themeKey = 'emoji-todo-theme-v1';
+    const key = 'emoji-todo-list-v1', themeKey = 'emoji-todo-theme-v1', quoteKey = 'todo-last-quote-v1';
+    const quotes = ['En sak i taget', 'Dags att beta av lite idag?', 'Det här vill jag få gjort...', 'Idag blir det gjort!', 'Dagens fokus är?', 'Planera. Gör. Klart.', 'Nu kör vi!', 'Lite i taget', 'Min checklista'];
     let tasks = JSON.parse(localStorage.getItem(key) || '[]').map(task => ({ ...task, marked: task.marked || false }));
     const activeList = document.querySelector('#active-list'), doneList = document.querySelector('#done-list');
     let selectedTab = 'active';
+    function showQuote() {
+      const previous = localStorage.getItem(quoteKey);
+      const available = quotes.filter(quote => quote !== previous);
+      const quote = available[Math.floor(Math.random() * available.length)];
+      document.querySelector('#subtitle').textContent = quote;
+      localStorage.setItem(quoteKey, quote);
+    }
     function setTheme(theme) {
       const night = theme === 'night';
       document.body.classList.toggle('night', night);
@@ -145,6 +153,7 @@
     document.querySelectorAll('.tab').forEach(button => button.addEventListener('click', () => selectTab(button.dataset.tab)));
     document.querySelector('#theme-toggle').addEventListener('click', () => setTheme(document.body.classList.contains('night') ? 'day' : 'night'));
     setTheme(localStorage.getItem(themeKey) || 'day');
+    showQuote();
     if ('serviceWorker' in navigator) window.addEventListener('load', async () => {
       const registration = await navigator.serviceWorker.register('sw.js');
       registration.update();
