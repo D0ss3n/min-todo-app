@@ -71,8 +71,8 @@
         <button class="tab active" type="button" data-tab="active" aria-selected="true">📋 Ej utförda <span class="count" id="active-count">0</span></button>
         <button class="tab" type="button" data-tab="done" aria-selected="false">✅ Utförda <span class="count" id="done-count">0</span></button>
       </nav>
-      <section class="section" id="active-section"><div class="section-head"><h2>📋 Ej utförda</h2></div><div class="section-actions"><span class="hint" id="marked-message">Markera klara uppgifter i rutan.</span><div class="bulk-actions"><button class="complete" id="complete-selected" type="button" disabled>✅ Flytta till utförda</button><button class="delete bulk-delete" id="delete-selected" type="button" disabled>🗑️ Ta bort</button></div></div><ul id="active-list"></ul><p class="empty" id="active-empty">Inga uppgifter ännu — börja med en ovan! 🚀</p></section>
-      <section class="section" id="done-section" hidden><div class="section-head"><h2>✅ Utförda</h2></div><div class="section-actions"><span class="hint" id="return-message">Markera uppgifter som ska tillbaka.</span><div class="bulk-actions"><button class="complete" id="return-selected" type="button" disabled>↩ Flytta till ej utförda</button><button class="delete bulk-delete" id="delete-done-selected" type="button" disabled>🗑️ Ta bort</button></div></div><ul id="done-list"></ul><p class="empty" id="done-empty">Avbockade uppgifter hamnar här. 🙌</p></section>
+      <section class="section" id="active-section"><div class="section-head"><h2>📋 Ej utförda</h2></div><div class="section-actions"><span class="hint" id="marked-message">Markera klara uppgifter i rutan.</span><div class="bulk-actions" id="active-bulk-actions" hidden><button class="complete" id="complete-selected" type="button" disabled>✅ Flytta till utförda</button><button class="delete bulk-delete" id="delete-selected" type="button" disabled>🗑️ Ta bort</button></div></div><ul id="active-list"></ul><p class="empty" id="active-empty">Inga uppgifter ännu — börja med en ovan! 🚀</p></section>
+      <section class="section" id="done-section" hidden><div class="section-head"><h2>✅ Utförda</h2></div><div class="section-actions"><span class="hint" id="return-message">Markera uppgifter som ska tillbaka.</span><div class="bulk-actions" id="done-bulk-actions" hidden><button class="complete" id="return-selected" type="button" disabled>↩ Flytta till ej utförda</button><button class="delete bulk-delete" id="delete-done-selected" type="button" disabled>🗑️ Ta bort</button></div></div><ul id="done-list"></ul><p class="empty" id="done-empty">Avbockade uppgifter hamnar här. 🙌</p></section>
     </div>
     <p class="footer">Dina uppgifter sparas automatiskt i den här webbläsaren. 💜</p>
   </main>
@@ -116,6 +116,7 @@
       document.querySelector('#done-count').textContent = done.length;
       const completeButton = document.querySelector('#complete-selected');
       const deleteButton = document.querySelector('#delete-selected');
+      document.querySelector('#active-bulk-actions').hidden = marked.length === 0;
       completeButton.disabled = marked.length === 0;
       deleteButton.disabled = marked.length === 0;
       completeButton.textContent = marked.length ? `✅ Flytta ${marked.length} till utförda` : '✅ Flytta till utförda';
@@ -123,6 +124,7 @@
       document.querySelector('#marked-message').textContent = marked.length ? `${marked.length} uppgift${marked.length === 1 ? '' : 'er'} markerad${marked.length === 1 ? '' : 'e'}. Godkänn när du är klar.` : 'Markera klara uppgifter i rutan.';
       const returnButton = document.querySelector('#return-selected');
       const deleteDoneButton = document.querySelector('#delete-done-selected');
+      document.querySelector('#done-bulk-actions').hidden = markedDone.length === 0;
       returnButton.disabled = markedDone.length === 0;
       deleteDoneButton.disabled = markedDone.length === 0;
       returnButton.textContent = markedDone.length ? `↩ Flytta ${markedDone.length} till ej utförda` : '↩ Flytta till ej utförda';
