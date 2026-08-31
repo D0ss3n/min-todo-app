@@ -131,7 +131,7 @@
     });
     document.querySelector('#complete-selected').addEventListener('click', () => {
       tasks.forEach(task => { if (!task.done && task.marked) { task.done = true; task.marked = false; } });
-      save(); render(); selectTab('done');
+      save(); render();
     });
     document.querySelector('#delete-selected').addEventListener('click', () => {
       const markedCount = tasks.filter(task => !task.done && task.marked).length;
@@ -140,7 +140,7 @@
     });
     document.querySelector('#return-selected').addEventListener('click', () => {
       tasks.forEach(task => { if (task.done && task.marked) { task.done = false; task.marked = false; } });
-      save(); render(); selectTab('active');
+      save(); render();
     });
     document.querySelectorAll('.tab').forEach(button => button.addEventListener('click', () => selectTab(button.dataset.tab)));
     document.querySelector('#theme-toggle').addEventListener('click', () => setTheme(document.body.classList.contains('night') ? 'day' : 'night'));
