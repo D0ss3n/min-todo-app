@@ -20,6 +20,13 @@
     h1 { font-size:clamp(2rem, 7vw, 3.2rem); margin:0; letter-spacing:-.06em; }
     header p { margin:9px 0 0; color:var(--muted); font-size:1.05rem; }
     .card { background:var(--paper); border:1px solid var(--line); border-radius:24px; box-shadow:var(--shadow); padding:18px; backdrop-filter:blur(10px); }
+    .sync-card { margin-top:16px; }
+    .sync-card h2 { margin:0 0 8px; }
+    .sync-row { display:flex; gap:10px; }
+    .sync { background:#e8e3ff; color:var(--purple-dark); }
+    .sync-status { margin:10px 3px 0; color:var(--muted); font-size:.88rem; }
+    .sync-status.connected { color:var(--green); font-weight:700; }
+    .disconnect { min-height:32px; padding:0 8px; color:var(--muted); background:transparent; text-decoration:underline; font-size:.8rem; }
     .theme-toggle { position:absolute; top:0; right:0; min-height:40px; padding:0 12px; background:var(--paper); color:var(--ink); border:1px solid var(--line); border-radius:12px; box-shadow:0 3px 12px rgba(60,39,130,.1); }
     .add-row { display:grid; grid-template-columns:1fr auto; gap:10px; }
     input { width:100%; border:2px solid var(--line); border-radius:14px; padding:15px 16px; background:var(--paper); font:inherit; color:var(--ink); outline:none; }
@@ -52,7 +59,7 @@
     .delete:hover { opacity:.82; }
     .empty { margin:8px 0; padding:18px 10px; color:var(--muted); text-align:center; }
     .footer { color:var(--muted); text-align:center; margin:22px 0 0; font-size:.86rem; }
-    @media (max-width:460px) { .app { width:min(100% - 22px,760px); padding-top:calc(20px + env(safe-area-inset-top)); } .theme-toggle { position:static; margin-bottom:18px; } .add-row { grid-template-columns:1fr; } .add { min-height:52px; } .section { padding:16px; } .task { grid-template-columns:auto 1fr; } .task-actions { grid-column:2; justify-self:start; justify-content:flex-start; } }
+    @media (max-width:460px) { .app { width:min(100% - 22px,760px); padding-top:calc(20px + env(safe-area-inset-top)); } .theme-toggle { position:static; margin-bottom:18px; } .add-row { grid-template-columns:1fr; } .sync-row { display:grid; } .add { min-height:52px; } .section { padding:16px; } .task { grid-template-columns:auto 1fr; } .task-actions { grid-column:2; justify-self:start; justify-content:flex-start; } }
   </style>
 </head>
 <body>
@@ -61,6 +68,12 @@
     <section class="card" aria-label="Lägg till uppgift">
       <form id="task-form" class="add-row"><input id="task-input" maxlength="180" autocomplete="off" placeholder="Vad vill du få gjort idag?" aria-label="Ny uppgift" required /><button class="add" type="submit">➕ Lägg till</button></form>
       <p class="hint">Tryck Enter eller på ”Lägg till” för att spara uppgiften.</p>
+    </section>
+    <section class="card sync-card" aria-label="Synka dina listor">
+      <h2>🔗 Synka dator och telefon</h2>
+      <div class="sync-row"><button class="sync" id="sync-connect" type="button">🔗 Slå in synkkod</button></div>
+      <p class="sync-status" id="sync-status">Tryck på knappen och använd samma kod, till exempel ”Hemma”, på båda enheterna.</p>
+      <button class="disconnect" id="sync-disconnect" type="button" hidden>Koppla från den här synkkoden</button>
     </section>
     <div class="sections">
       <nav class="tabs" aria-label="Välj kategori">
@@ -73,8 +86,11 @@
     <p class="footer">Dina uppgifter sparas automatiskt i den här webbläsaren. 💜</p>
   </main>
   <script>
-    const key = 'emoji-todo-list-v1', themeKey = 'emoji-todo-theme-v1';
+    const key = 'emoji-todo-list-v1', themeKey = 'emoji-todo-theme-v1', syncKey = 'emoji-todo-sync-code-v1';
     let tasks = JSON.parse(localStorage.getItem(key) || '[]').map(task => ({ ...task, marked: task.marked || false }));
+    let connectedCode = localStorage.getItem(syncKey) || '';
+    let syncTimeout;
+    const serializableTasks = list => list.map(({ marked, ...task }) => task);
     const activeList = document.querySelector('#active-list'), doneList = document.querySelector('#done-list');
     let selectedTab = 'active';
     function setTheme(theme) {
@@ -95,7 +111,42 @@
         button.setAttribute('aria-selected', active);
       });
     }
-    function save() { localStorage.setItem(key, JSON.stringify(tasks)); }
+    function save() { localStorage.setItem(key, JSON.stringify(tasks)); scheduleSync(); }
+    function updateSyncStatus(message, connected = false) {
+      const status = document.querySelector('#sync-status'); status.textContent = message; status.classList.toggle('connected', connected);
+      document.querySelector('#sync-disconnect').hidden = !connected;
+    }
+    async function request(path, options) {
+      const response = await fetch(path, options);
+      if (!response.ok) throw new Error('Synkningen kunde inte genomföras.');
+      return response.json();
+    }
+    async function syncNow() {
+      if (!connectedCode) return;
+      try {
+        await request(`/api/lists/${encodeURIComponent(connectedCode)}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({tasks:serializableTasks(tasks)}) });
+        updateSyncStatus(`✓ Synkad med kod: ${connectedCode}`, true);
+      } catch { updateSyncStatus('Synkningen misslyckades. Kontrollera att du öppnat sidan via servern.', false); }
+    }
+    function scheduleSync() { clearTimeout(syncTimeout); syncTimeout = setTimeout(syncNow, 350); }
+    async function connectToCode(code, silent = false) {
+      const cleanCode = code.trim();
+      if (!/^[a-zA-Z0-9_-]{4,40}$/.test(cleanCode)) { if (!silent) updateSyncStatus('Koden ska ha 4–40 bokstäver, siffror, _ eller -.'); return; }
+      try {
+        const remote = await request(`/api/lists/${encodeURIComponent(cleanCode)}`);
+        connectedCode = cleanCode; localStorage.setItem(syncKey, cleanCode); document.querySelector('#sync-connect').textContent = '🔁 Byt synkkod';
+        if (remote.exists) { tasks = remote.tasks.map(task => ({ ...task, marked:false })); localStorage.setItem(key, JSON.stringify(tasks)); render(); }
+        else await syncNow();
+        updateSyncStatus(`✓ Synkad med kod: ${cleanCode}`, true);
+      } catch { updateSyncStatus('Kan inte ansluta. Starta synkservern och öppna sidan via den.', false); }
+    }
+    async function pollRemote() {
+      if (!connectedCode) return;
+      try {
+        const remote = await request(`/api/lists/${encodeURIComponent(connectedCode)}`);
+        if (remote.exists && JSON.stringify(serializableTasks(remote.tasks)) !== JSON.stringify(serializableTasks(tasks))) { tasks = remote.tasks.map(task => ({ ...task, marked:false })); localStorage.setItem(key, JSON.stringify(tasks)); render(); }
+      } catch { /* nästa försök sker automatiskt */ }
+    }
     function render() {
       activeList.replaceChildren(); doneList.replaceChildren();
       const active = tasks.filter(t => !t.done), done = tasks.filter(t => t.done);
@@ -134,11 +185,15 @@
       tasks.forEach(task => { if (task.done && task.marked) { task.done = false; task.marked = false; } });
       save(); render(); selectTab('active');
     });
+    document.querySelector('#sync-connect').addEventListener('click', () => { const code = window.prompt('Slå in din synkkod. Använd samma kod på telefonen och datorn, till exempel Hemma.', connectedCode); if (code !== null) connectToCode(code); });
+    document.querySelector('#sync-disconnect').addEventListener('click', () => { connectedCode = ''; localStorage.removeItem(syncKey); document.querySelector('#sync-connect').textContent = '🔗 Slå in synkkod'; updateSyncStatus('Tryck på knappen och använd samma kod, till exempel ”Hemma”, på båda enheterna.'); });
     document.querySelectorAll('.tab').forEach(button => button.addEventListener('click', () => selectTab(button.dataset.tab)));
     document.querySelector('#theme-toggle').addEventListener('click', () => setTheme(document.body.classList.contains('night') ? 'day' : 'night'));
     setTheme(localStorage.getItem(themeKey) || 'day');
     if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
     render();
+    if (connectedCode) connectToCode(connectedCode, true);
+    setInterval(pollRemote, 6000);
   </script>
 </body>
 </html>
