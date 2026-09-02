@@ -1,179 +1,19 @@
-<!doctype html>
-<html lang="sv">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#6c4cff" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="todo-icon.svg?v=17" type="image/svg+xml" sizes="any" />
-  <link rel="shortcut icon" href="todo-icon.svg?v=17" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="todo-icon.svg" />
-  <title>Att göra lista</title>
-  <style>
-    :root { --ink:#20203a; --muted:#74748c; --paper:#fff; --bg:#f6f4ff; --purple:#6c4cff; --purple-dark:#5438d6; --green:#1a9b67; --line:#e8e5f4; --tab-bg:#eae7f7; --danger-bg:#fff1f2; --danger:#cc3e55; --shadow:0 18px 50px rgba(60, 39, 130, .12); }
-    body.night { --ink:#f5f2ff; --muted:#bcb5d5; --paper:#282442; --bg:#161326; --purple:#9b87ff; --purple-dark:#c1b5ff; --green:#57d69b; --line:#433d64; --tab-bg:#302b4d; --danger-bg:#4a2937; --danger:#ff9aaa; --shadow:0 18px 50px rgba(0, 0, 0, .3); }
-    * { box-sizing:border-box; }
-    body { margin:0; min-height:100vh; font-family:ui-rounded, "Nunito", system-ui, sans-serif; color:var(--ink); background:radial-gradient(circle at 5% 0%,#e7e0ff 0 17%,transparent 42%),radial-gradient(circle at 100% 95%,#d9fae8 0 12%,transparent 34%),var(--bg); transition:background .25s,color .25s; }
-    body.night { background:radial-gradient(circle at 5% 0%,#362967 0 17%,transparent 42%),radial-gradient(circle at 100% 95%,#174c46 0 12%,transparent 34%),var(--bg); }
-    .app { width:min(760px, calc(100% - 32px)); margin:0 auto; padding:calc(28px + env(safe-area-inset-top)) 0 calc(64px + env(safe-area-inset-bottom)); }
-    header { position:relative; text-align:center; margin-bottom:26px; }
-    h1 { font-size:clamp(2rem, 7vw, 3.2rem); margin:0; letter-spacing:-.06em; }
-    header p { margin:9px 0 0; color:var(--muted); font-size:1.05rem; }
-    .card { background:var(--paper); border:1px solid var(--line); border-radius:24px; box-shadow:var(--shadow); padding:18px; backdrop-filter:blur(10px); }
-    .theme-toggle { position:absolute; top:0; right:0; min-height:40px; padding:0 12px; background:var(--paper); color:var(--ink); border:1px solid var(--line); border-radius:12px; box-shadow:0 3px 12px rgba(60,39,130,.1); }
-    .add-row { display:grid; grid-template-columns:1fr auto; gap:10px; }
-    input { width:100%; border:2px solid var(--line); border-radius:14px; padding:15px 16px; background:var(--paper); font:inherit; color:var(--ink); outline:none; }
-    input:focus { border-color:var(--purple); box-shadow:0 0 0 4px #e7e1ff; }
-    button { border:0; border-radius:14px; padding:0 18px; min-height:52px; font:inherit; font-weight:800; cursor:pointer; transition:transform .16s, background .16s, opacity .16s; }
-    button:hover { transform:translateY(-2px); } button:active { transform:translateY(0); }
-    .add { background:var(--purple); color:white; } .add:hover { background:var(--purple-dark); }
-    .hint { margin:12px 3px 0; color:var(--muted); font-size:.88rem; }
-    .sections { margin-top:26px; }
-    .tabs { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:0 0 12px; padding:7px; border-radius:18px; background:var(--tab-bg); }
-    .tab { min-height:48px; padding:0 10px; color:var(--muted); background:transparent; border-radius:12px; }
-    .tab.active { color:var(--purple-dark); background:var(--paper); box-shadow:0 3px 10px rgba(60,39,130,.12); }
-    .section { background:var(--paper); border-radius:24px; padding:20px; box-shadow:0 8px 30px rgba(60,39,130,.07); }
-    .section[hidden] { display:none; }
-    .section-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
-    .section-actions { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 14px; }
-    .bulk-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
-    h2 { font-size:1.15rem; margin:0; }
-    .count { background:var(--tab-bg); color:var(--purple-dark); border-radius:999px; padding:4px 10px; font-size:.82rem; font-weight:800; }
-    ul { padding:0; margin:0; list-style:none; display:grid; gap:10px; }
-    .task { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:12px; min-height:60px; padding:9px 10px; border:1px solid var(--line); border-radius:16px; }
-    .toggle { width:30px; height:30px; min-height:30px; padding:0; border:2px solid #c8c2e4; border-radius:10px; background:var(--paper); color:white; font-size:1rem; }
-    .toggle:hover { border-color:var(--green); }
-    .task.marked .toggle { background:var(--green); border-color:var(--green); }
-    .task-text { font-weight:700; overflow-wrap:anywhere; }
-    .task.done .task-text { text-decoration:line-through; color:var(--muted); }
-    .complete { min-height:44px; padding:0 14px; color:white; background:var(--green); font-size:.9rem; }
-    .complete:disabled { cursor:not-allowed; opacity:.45; transform:none; }
-    .bulk-delete { min-height:44px; padding:0 14px; }
-    .bulk-delete:disabled { cursor:not-allowed; opacity:.45; transform:none; }
-    .delete { min-height:38px; padding:0 11px; background:var(--danger-bg); color:var(--danger); border-radius:10px; font-size:.85rem; }
-    .delete:hover { opacity:.82; }
-    .empty { margin:8px 0; padding:18px 10px; color:var(--muted); text-align:center; }
-    .footer { color:var(--muted); text-align:center; margin:22px 0 0; font-size:.86rem; }
-    @media (max-width:460px) { .app { width:min(100% - 22px,760px); padding-top:calc(20px + env(safe-area-inset-top)); } .theme-toggle { position:static; margin-bottom:18px; } .add-row { grid-template-columns:1fr; } .add { min-height:52px; } .section { padding:16px; } .section-actions { align-items:flex-start; flex-direction:column; } .bulk-actions { width:100%; display:grid; grid-template-columns:1fr 1fr; } .task { grid-template-columns:auto 1fr; } }
-  </style>
-</head>
-<body>
-  <main class="app">
-    <header><button class="theme-toggle" id="theme-toggle" type="button" aria-label="Växla till nattläge">🌙 Nattläge</button><h1>Att göra lista</h1><p id="subtitle"></p></header>
-    <section class="card" aria-label="Lägg till uppgift">
-      <form id="task-form" class="add-row"><input id="task-input" maxlength="180" autocomplete="off" placeholder="Vad vill du få gjort idag?" aria-label="Ny uppgift" required /><button class="add" type="submit">➕ Lägg till</button></form>
-      <p class="hint">Tryck Enter eller på ”Lägg till” för att spara uppgiften.</p>
-    </section>
-    <div class="sections">
-      <nav class="tabs" aria-label="Välj kategori">
-        <button class="tab active" type="button" data-tab="active" aria-selected="true">📋 Ej utförda <span class="count" id="active-count">0</span></button>
-        <button class="tab" type="button" data-tab="done" aria-selected="false">✅ Utförda <span class="count" id="done-count">0</span></button>
-      </nav>
-      <section class="section" id="active-section"><div class="section-head"><h2>📋 Ej utförda</h2></div><div class="section-actions"><span class="hint" id="marked-message">Markera klara uppgifter i rutan.</span><div class="bulk-actions" id="active-bulk-actions" hidden><button class="complete" id="complete-selected" type="button" disabled>✅ Flytta till utförda</button><button class="delete bulk-delete" id="delete-selected" type="button" disabled>🗑️ Ta bort</button></div></div><ul id="active-list"></ul><p class="empty" id="active-empty">Inga uppgifter ännu — börja med en ovan! 🚀</p></section>
-      <section class="section" id="done-section" hidden><div class="section-head"><h2>✅ Utförda</h2></div><div class="section-actions"><span class="hint" id="return-message">Markera uppgifter som ska tillbaka.</span><div class="bulk-actions" id="done-bulk-actions" hidden><button class="complete" id="return-selected" type="button" disabled>↩ Flytta till ej utförda</button><button class="delete bulk-delete" id="delete-done-selected" type="button" disabled>🗑️ Ta bort</button></div></div><ul id="done-list"></ul><p class="empty" id="done-empty">Avbockade uppgifter hamnar här. 🙌</p></section>
-    </div>
-    <p class="footer">Dina uppgifter sparas automatiskt i den här webbläsaren. 💜</p>
-  </main>
-  <script>
-    const key = 'emoji-todo-list-v1', themeKey = 'emoji-todo-theme-v1', quoteKey = 'todo-last-quote-v1';
-    const quotes = ['En sak i taget', 'Dags att beta av lite idag?', 'Det här vill jag få gjort...', 'Idag blir det gjort!', 'Dagens fokus är?', 'Planera. Gör. Klart.', 'Nu kör vi!', 'Lite i taget', 'Min checklista'];
-    let tasks = JSON.parse(localStorage.getItem(key) || '[]').map(task => ({ ...task, marked: task.marked || false }));
-    const activeList = document.querySelector('#active-list'), doneList = document.querySelector('#done-list');
-    let selectedTab = 'active';
-    function showQuote() {
-      const previous = localStorage.getItem(quoteKey);
-      const available = quotes.filter(quote => quote !== previous);
-      const quote = available[Math.floor(Math.random() * available.length)];
-      document.querySelector('#subtitle').textContent = quote;
-      localStorage.setItem(quoteKey, quote);
-    }
-    function setTheme(theme) {
-      const night = theme === 'night';
-      document.body.classList.toggle('night', night);
-      const button = document.querySelector('#theme-toggle');
-      button.textContent = night ? '☀️ Dagläge' : '🌙 Nattläge';
-      button.setAttribute('aria-label', night ? 'Växla till dagläge' : 'Växla till nattläge');
-      localStorage.setItem(themeKey, theme);
-    }
-    function selectTab(tab) {
-      selectedTab = tab;
-      document.querySelector('#active-section').hidden = tab !== 'active';
-      document.querySelector('#done-section').hidden = tab !== 'done';
-      document.querySelectorAll('.tab').forEach(button => {
-        const active = button.dataset.tab === tab;
-        button.classList.toggle('active', active);
-        button.setAttribute('aria-selected', active);
-      });
-    }
-    function save() { localStorage.setItem(key, JSON.stringify(tasks)); }
-    function render() {
-      activeList.replaceChildren(); doneList.replaceChildren();
-      const active = tasks.filter(t => !t.done), done = tasks.filter(t => t.done);
-      const marked = active.filter(t => t.marked), markedDone = done.filter(t => t.marked);
-      document.querySelector('#active-count').textContent = active.length;
-      document.querySelector('#done-count').textContent = done.length;
-      const completeButton = document.querySelector('#complete-selected');
-      const deleteButton = document.querySelector('#delete-selected');
-      document.querySelector('#active-bulk-actions').hidden = marked.length === 0;
-      completeButton.disabled = marked.length === 0;
-      deleteButton.disabled = marked.length === 0;
-      completeButton.textContent = marked.length ? `✅ Flytta ${marked.length} till utförda` : '✅ Flytta till utförda';
-      deleteButton.textContent = marked.length ? `🗑️ Ta bort ${marked.length}` : '🗑️ Ta bort';
-      document.querySelector('#marked-message').textContent = marked.length ? `${marked.length} uppgift${marked.length === 1 ? '' : 'er'} markerad${marked.length === 1 ? '' : 'e'}. Godkänn när du är klar.` : 'Markera klara uppgifter i rutan.';
-      const returnButton = document.querySelector('#return-selected');
-      const deleteDoneButton = document.querySelector('#delete-done-selected');
-      document.querySelector('#done-bulk-actions').hidden = markedDone.length === 0;
-      returnButton.disabled = markedDone.length === 0;
-      deleteDoneButton.disabled = markedDone.length === 0;
-      returnButton.textContent = markedDone.length ? `↩ Flytta ${markedDone.length} till ej utförda` : '↩ Flytta till ej utförda';
-      deleteDoneButton.textContent = markedDone.length ? `🗑️ Ta bort ${markedDone.length}` : '🗑️ Ta bort';
-      document.querySelector('#return-message').textContent = markedDone.length ? `${markedDone.length} uppgift${markedDone.length === 1 ? '' : 'er'} markerad${markedDone.length === 1 ? '' : 'e'}. Flytta tillbaka när du är klar.` : 'Markera uppgifter som ska tillbaka.';
-      document.querySelector('#active-empty').hidden = active.length > 0;
-      document.querySelector('#done-empty').hidden = done.length > 0;
-      [...active, ...done].forEach(task => {
-        const item = document.createElement('li'); item.className = `task${task.done ? ' done' : ''}${task.marked ? ' marked' : ''}`;
-        const toggle = document.createElement('button'); toggle.className = 'toggle'; toggle.type = 'button'; toggle.setAttribute('aria-label', task.done ? 'Markera för att flytta tillbaka' : 'Markera som klar'); toggle.textContent = task.marked ? '✓' : '';
-        toggle.onclick = () => { task.marked = !task.marked; save(); render(); };
-        const text = document.createElement('span'); text.className = 'task-text'; text.textContent = task.text;
-        item.append(toggle, text); (task.done ? doneList : activeList).append(item);
-      });
-    }
-    document.querySelector('#task-form').addEventListener('submit', e => {
-      e.preventDefault(); const input = document.querySelector('#task-input'); const text = input.value.trim();
-      if (!text) return; tasks.unshift({ id: crypto.randomUUID(), text, done:false, marked:false }); save(); input.value = ''; render();
-    });
-    document.querySelector('#complete-selected').addEventListener('click', () => {
-      tasks.forEach(task => { if (!task.done && task.marked) { task.done = true; task.marked = false; } });
-      save(); render();
-    });
-    document.querySelector('#delete-selected').addEventListener('click', () => {
-      const markedCount = tasks.filter(task => !task.done && task.marked).length;
-      if (!markedCount || !window.confirm(`Ta bort ${markedCount} markerad${markedCount === 1 ? '' : 'e'} uppgift${markedCount === 1 ? '' : 'er'}?`)) return;
-      tasks = tasks.filter(task => task.done || !task.marked); save(); render();
-    });
-    document.querySelector('#return-selected').addEventListener('click', () => {
-      tasks.forEach(task => { if (task.done && task.marked) { task.done = false; task.marked = false; } });
-      save(); render();
-    });
-    document.querySelector('#delete-done-selected').addEventListener('click', () => {
-      const markedCount = tasks.filter(task => task.done && task.marked).length;
-      if (!markedCount || !window.confirm(`Ta bort ${markedCount} markerad${markedCount === 1 ? '' : 'e'} utförd uppgift${markedCount === 1 ? '' : 'er'}?`)) return;
-      tasks = tasks.filter(task => !task.done || !task.marked); save(); render();
-    });
-    document.querySelectorAll('.tab').forEach(button => button.addEventListener('click', () => selectTab(button.dataset.tab)));
-    document.querySelector('#theme-toggle').addEventListener('click', () => setTheme(document.body.classList.contains('night') ? 'day' : 'night'));
-    setTheme(localStorage.getItem(themeKey) || 'day');
-    showQuote();
-    if ('serviceWorker' in navigator) window.addEventListener('load', async () => {
-      const registration = await navigator.serviceWorker.register('sw.js');
-      registration.update();
-      if (registration.waiting) registration.waiting.postMessage('SKIP_WAITING');
-      let refreshed = false;
-      navigator.serviceWorker.addEventListener('controllerchange', () => { if (!refreshed) { refreshed = true; window.location.reload(); } });
-    });
-    render();
-  </script>
-</body>
-</html>
+<!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#6c4cff"><link rel="manifest" href="manifest.json"><link rel="icon" href="todo-icon.svg?v=17" type="image/svg+xml"><link rel="apple-touch-icon" href="todo-icon.svg"><title>Att göra lista</title><style>
+:root{--i:#20203a;--m:#74748c;--p:#fff;--b:#f6f4ff;--v:#6c4cff;--l:#e8e5f4;--t:#eae7f7;--g:#1a9b67;--d:#fff1f2}body.night{--i:#f5f2ff;--m:#bcb5d5;--p:#282442;--b:#161326;--v:#9b87ff;--l:#433d64;--t:#302b4d;--d:#4a2937}*{box-sizing:border-box}body{margin:0;background:var(--b);color:var(--i);font-family:system-ui,sans-serif}.app{max-width:800px;margin:auto;padding:28px 16px 64px}header{text-align:center;position:relative;margin-bottom:22px}h1{margin:0;font-size:clamp(2rem,7vw,3rem)}header p,.hint{color:var(--m)}.card,.section{background:var(--p);border:1px solid var(--l);border-radius:22px;padding:16px;margin-top:15px;box-shadow:0 8px 28px #30206012}button,input,select{font:inherit}button{border:0;border-radius:12px;min-height:43px;padding:0 13px;font-weight:800;cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}input,select{width:100%;background:var(--p);color:var(--i);border:2px solid var(--l);border-radius:12px;padding:11px}label{display:grid;gap:4px;color:var(--m);font-size:.84rem;font-weight:700}.theme{position:absolute;right:0;top:0;background:var(--p);color:var(--i);border:1px solid var(--l)}.add{background:var(--v);color:white}.complete{background:var(--g);color:white}.delete{background:var(--d);color:#c33d54}.row{display:grid;grid-template-columns:1fr auto;gap:8px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:10px}.quick{background:var(--t);color:var(--v);margin:10px 5px 0 0}.filters{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px}.focus{border-color:#ffd56a}.focus[hidden],.modal[hidden],.section[hidden],.actions[hidden]{display:none}.tabs{display:grid;grid-template-columns:1fr 1fr;gap:7px;background:var(--t);padding:7px;border-radius:17px;margin-top:18px}.tab{background:transparent;color:var(--m)}.tab.active{background:var(--p);color:var(--v)}.count,.chip{background:var(--t);border-radius:99px;padding:3px 8px;font-size:.75rem}.head,.bar{display:flex;justify-content:space-between;align-items:center;gap:9px}.actions{display:flex;gap:7px;flex-wrap:wrap}.list{list-style:none;margin:0;padding:0;display:grid;gap:9px}.task{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;border:1px solid var(--l);border-radius:15px;padding:9px;cursor:grab}.task.drag{opacity:.45}.check{width:30px;height:30px;min-height:30px;padding:0;background:var(--p);border:2px solid #c8c2e4;color:white}.marked .check{background:var(--g);border-color:var(--g)}.done .name{text-decoration:line-through;color:var(--m)}.meta{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}.high{background:#ffe4e8;color:#b82745}.normal{background:#fff2c8;color:#876100}.low{background:#daf6e7;color:#16744e}.edit{background:var(--t);color:var(--v);min-height:35px}.empty{text-align:center;color:var(--m)}.modal{position:fixed;inset:0;background:#100c1ba8;display:grid;place-items:center;padding:16px}.modal form{width:min(560px,100%);background:var(--p);padding:18px;border-radius:20px}.modal h2{margin:0}.modal .bar{margin-bottom:12px}@media(max-width:560px){.theme{position:static;margin-bottom:10px}.row,.filters,.grid{grid-template-columns:1fr}.bar{align-items:flex-start;flex-direction:column}.actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.task{grid-template-columns:auto 1fr}.edit{grid-column:2;justify-self:start}}
+</style></head><body><main class="app"><header><button id="theme" class="theme">🌙 Nattläge</button><h1>Att göra lista</h1><p id="quote"></p></header>
+<section class="card"><form id="add" class="row"><input id="text" placeholder="Vad vill du få gjort idag?" required><button class="add">➕ Lägg till</button></form><details><summary>⚙️ Prioritet, datum och kategori</summary><div class="grid"><label>Prioritet<select id="priority"><option value="normal">🟡 Normal</option><option value="high">🔴 Viktig</option><option value="low">🟢 När tid finns</option></select></label><label>Kategori<select id="category"><option value="">Ingen kategori</option><option>Hemma</option><option>Jobb</option><option>Ärenden</option><option>Träning</option><option>Studier</option><option>Övrigt</option></select></label><label>Datum / påminnelse<input id="date" type="date"></label><label>Återkommer<select id="repeat"><option value="">Ingen</option><option value="daily">Varje dag</option><option value="weekly">Varje vecka</option><option value="sunday">Varje söndag</option></select></label></div><button class="quick" type="button" data-date="date" data-days="0">Gör idag</button><button class="quick" type="button" data-date="date" data-days="1">Imorgon</button></details><p class="hint">✏️ Redigera när som helst · dra ⠿ för att ändra ordning</p></section>
+<section id="focus" class="card focus" hidden><b>🎯 Dagens fokus</b><div id="focusText"></div><small id="focusMeta" class="hint"></small></section>
+<section class="card filters"><input id="search" type="search" placeholder="🔎 Sök"><select id="fp"><option value="">Alla prioriteter</option><option value="high">🔴 Viktig</option><option value="normal">🟡 Normal</option><option value="low">🟢 När tid finns</option></select><select id="fc"><option value="">Alla kategorier</option><option>Hemma</option><option>Jobb</option><option>Ärenden</option><option>Träning</option><option>Studier</option><option>Övrigt</option></select></section>
+<nav class="tabs"><button class="tab active" data-tab="active">📋 Ej utförda <span id="ac" class="count">0</span></button><button class="tab" data-tab="done">✅ Utförda <span id="dc" class="count">0</span></button></nav>
+<section id="active" class="section"><div class="head"><h2>📋 Ej utförda</h2><div id="aa" class="actions" hidden><button id="move" class="complete">✅ Flytta till utförda</button><button id="delA" class="delete">🗑️ Ta bort</button></div></div><p id="ah" class="hint">Markera klara uppgifter i rutan.</p><ul id="al" class="list"></ul><p id="ae" class="empty">Inga uppgifter matchar just nu.</p></section>
+<section id="done" class="section" hidden><div class="head"><h2>✅ Utförda</h2><div id="da" class="actions" hidden><button id="back" class="complete">↩ Flytta till ej utförda</button><button id="delD" class="delete">🗑️ Ta bort</button></div></div><p id="dh" class="hint">Markera uppgifter som ska tillbaka.</p><ul id="dl" class="list"></ul><p id="de" class="empty">Inga utförda uppgifter matchar just nu.</p></section><p class="hint" style="text-align:center">Dina uppgifter sparas automatiskt i den här webbläsaren. 💜</p></main>
+<div id="modal" class="modal" hidden><form id="editForm"><div class="bar"><h2>✏️ Redigera uppgift</h2><button id="close" type="button">✕</button></div><label>Uppgift<input id="et" required></label><div class="grid"><label>Prioritet<select id="ep"><option value="high">🔴 Viktig</option><option value="normal">🟡 Normal</option><option value="low">🟢 När tid finns</option></select></label><label>Kategori<select id="ec"><option value="">Ingen kategori</option><option>Hemma</option><option>Jobb</option><option>Ärenden</option><option>Träning</option><option>Studier</option><option>Övrigt</option></select></label><label>Datum / påminnelse<input id="ed" type="date"></label><label>Återkommer<select id="er"><option value="">Ingen</option><option value="daily">Varje dag</option><option value="weekly">Varje vecka</option><option value="sunday">Varje söndag</option></select></label></div><button class="quick" type="button" data-date="ed" data-days="0">Gör idag</button><button class="quick" type="button" data-date="ed" data-days="1">Imorgon</button><div class="actions" style="justify-content:end;margin-top:15px"><button id="cancel" type="button">Avbryt</button><button class="add">Spara</button></div></form></div>
+<script>
+const K='emoji-todo-list-v1',q=['En sak i taget','Dags att beta av lite idag?','Det här vill jag få gjort...','Idag blir det gjort!','Dagens fokus är?','Planera. Gör. Klart.','Nu kör vi!','Lite i taget','Min checklista'],p={high:['🔴','Viktig'],normal:['🟡','Normal'],low:['🟢','När tid finns']},r={daily:'Varje dag',weekly:'Varje vecka',sunday:'Varje söndag'};let T=JSON.parse(localStorage.getItem(K)||'[]').map(x=>({...x,marked:false,priority:x.priority||'normal',category:x.category||'',dueDate:x.dueDate||'',recurrence:x.recurrence||''})),tab='active',edit=null,drag=null;const $=s=>document.querySelector(s),day=n=>{let d=new Date;d.setDate(d.getDate()+n);return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)},save=()=>localStorage.setItem(K,JSON.stringify(T));
+function quote(){let last=localStorage.getItem('todo-q'),a=q.filter(x=>x!==last),x=a[Math.random()*a.length|0];$('#quote').textContent=x;localStorage.setItem('todo-q',x)}function label(x){return x===day(0)?'📅 Idag':x===day(1)?'📅 Imorgon':x?'📅 '+x:''}function ok(x){return(!$('#search').value||x.text.toLowerCase().includes($('#search').value.toLowerCase()))&&(!$('#fp').value||x.priority===$('#fp').value)&&(!$('#fc').value||x.category===$('#fc').value)}
+function item(x){let li=document.createElement('li');li.className='task '+(x.done?'done ':'')+(x.marked?'marked':'');li.draggable=true;li.innerHTML=`<button class="check">${x.marked?'✓':''}</button><div><div class="name"></div><div class="meta"></div></div><button class="edit">✏️ Redigera ⠿</button>`;li.querySelector('.name').textContent=x.text;[[p[x.priority][0]+' '+p[x.priority][1],x.priority],x.category&&[x.category,''],label(x.dueDate)&&[label(x.dueDate),''],x.recurrence&&['🔁 '+r[x.recurrence],'']].filter(Boolean).forEach(z=>{let s=document.createElement('span');s.className='chip '+z[1];s.textContent=z[0];li.querySelector('.meta').append(s)});li.querySelector('.check').onclick=()=>{x.marked=!x.marked;save();render()};li.querySelector('.edit').onclick=()=>open(x);li.ondragstart=()=>{drag=x.id;li.classList.add('drag')};li.ondragend=()=>li.classList.remove('drag');li.ondragover=e=>e.preventDefault();li.ondrop=e=>{e.preventDefault();order(drag,x.id,x.done)};return li}
+function render(){let A=T.filter(x=>!x.done),D=T.filter(x=>x.done),m=A.filter(x=>x.marked),md=D.filter(x=>x.marked),av=A.filter(ok),dv=D.filter(ok);$('#ac').textContent=A.length;$('#dc').textContent=D.length;$('#aa').hidden=!m.length;$('#da').hidden=!md.length;$('#move').textContent=`✅ Flytta ${m.length} till utförda`;$('#delA').textContent=`🗑️ Ta bort ${m.length}`;$('#back').textContent=`↩ Flytta ${md.length} till ej utförda`;$('#delD').textContent=`🗑️ Ta bort ${md.length}`;$('#ah').textContent=m.length?`${m.length} markerade — välj vad du vill göra.`:'Markera klara uppgifter i rutan.';$('#dh').textContent=md.length?`${md.length} markerade — välj vad du vill göra.`:'Markera uppgifter som ska tillbaka.';$('#al').replaceChildren(...av.map(item));$('#dl').replaceChildren(...dv.map(item));$('#ae').hidden=!!av.length;$('#de').hidden=!!dv.length;let f=A.slice().sort((a,b)=>({high:0,normal:1,low:2}[a.priority]-({high:0,normal:1,low:2}[b.priority])||(a.dueDate||'9999').localeCompare(b.dueDate||'9999'))[0];$('#focus').hidden=!f;if(f){$('#focusText').textContent=p[f.priority][0]+' '+f.text;$('#focusMeta').textContent=[f.category,label(f.dueDate)].filter(Boolean).join(' · ')||'Din viktigaste uppgift just nu'}}
+function order(a,b,done){if(!a||a===b)return;let g=T.filter(x=>x.done===done),o=T.filter(x=>x.done!==done),i=g.findIndex(x=>x.id===a),j=g.findIndex(x=>x.id===b);if(i<0||j<0)return;g.splice(j,0,g.splice(i,1)[0]);T=done?[...o,...g]:[...g,...o];save();render()}function next(x){let d=x.dueDate?new Date(x.dueDate+'T00:00'):new Date;if(x.recurrence==='daily')d.setDate(d.getDate()+1);if(x.recurrence==='weekly')d.setDate(d.getDate()+7);if(x.recurrence==='sunday')d.setDate(d.getDate()+((7-d.getDay())%7||7));return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)}
+function open(x){edit=x.id;$('#et').value=x.text;$('#ep').value=x.priority;$('#ec').value=x.category;$('#ed').value=x.dueDate;$('#er').value=x.recurrence;$('#modal').hidden=false}function close(){edit=null;$('#modal').hidden=true}function remove(done){let n=T.filter(x=>x.done===done&&x.marked).length;if(n&&confirm(`Ta bort ${n} markerade uppgifter?`)){T=T.filter(x=>x.done!==done||!x.marked);save();render()}}
+$('#add').onsubmit=e=>{e.preventDefault();let text=$('#text').value.trim();if(!text)return;T.unshift({id:crypto.randomUUID(),text,done:false,marked:false,priority:$('#priority').value,category:$('#category').value,dueDate:$('#date').value,recurrence:$('#repeat').value});save();e.target.reset();render()};$('#move').onclick=()=>{let n=[];T.forEach(x=>{if(!x.done&&x.marked){x.done=true;x.marked=false;if(x.recurrence)n.push({...x,id:crypto.randomUUID(),done:false,dueDate:next(x)})}});T.unshift(...n);save();render()};$('#back').onclick=()=>{T.forEach(x=>{if(x.done&&x.marked){x.done=false;x.marked=false}});save();render()};$('#delA').onclick=()=>remove(false);$('#delD').onclick=()=>remove(true);$('#editForm').onsubmit=e=>{e.preventDefault();let x=T.find(x=>x.id===edit),text=$('#et').value.trim();if(x&&text)Object.assign(x,{text,priority:$('#ep').value,category:$('#ec').value,dueDate:$('#ed').value,recurrence:$('#er').value});save();close();render()};$('#close').onclick=$('#cancel').onclick=close;$('#modal').onclick=e=>{if(e.target===$('#modal'))close()};document.querySelectorAll('[data-date]').forEach(b=>b.onclick=()=>$('#'+b.dataset.date).value=day(+b.dataset.days));document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;$('#active').hidden=tab!=='active';$('#done').hidden=tab!=='done';document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b))});['search','fp','fc'].forEach(x=>$('#'+x).oninput=render);$('#theme').onclick=()=>{let n=!document.body.classList.contains('night');document.body.classList.toggle('night',n);$('#theme').textContent=n?'☀️ Dagläge':'🌙 Nattläge';localStorage.setItem('todo-theme',n?'night':'day')};document.body.classList.toggle('night',localStorage.getItem('todo-theme')==='night');quote();render();if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').then(x=>x.update());
+</script></body></html>
