@@ -9,9 +9,8 @@ document.querySelector('#menu-home')?.addEventListener('click',()=>localStorage.
 
 const savedPage=localStorage.getItem(pageStateKey);
 if(savedPage){
-  setTimeout(()=>{
-    if(savedPage==='install')document.querySelector('#menu-install')?.click();
-    else if(savedPage==='backup')document.querySelector('#menu-backup')?.click();
-    else document.querySelector(`[data-info="${savedPage}"]`)?.click();
-  },80);
+  if(savedPage==='install')document.querySelector('#menu-install')?.click();
+  else if(savedPage==='backup')document.querySelector('#menu-backup')?.click();
+  else document.querySelector(`[data-info="${savedPage}"]`)?.click();
 }
+document.documentElement.classList.remove('restoring');
