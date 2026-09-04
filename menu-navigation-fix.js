@@ -1,0 +1,1 @@
+document.head.insertAdjacentHTML('beforeend','<style>.side-menu{z-index:100!important}.menu-btn{z-index:110!important}</style>');const menuPanel=document.querySelector('#side-menu'),backupPanel=document.querySelector('#backup-guide');menuPanel.addEventListener('click',event=>{if(event.target.closest('button'))backupPanel.hidden=true},true);
