@@ -6,3 +6,4 @@ const menuInfo=document.createElement('div');menuInfo.innerHTML='<button data-in
 document.head.insertAdjacentHTML('beforeend','<style>.menu-btn{z-index:60}.guide-close{display:none}</style>');const home=document.createElement('button');home.id='menu-home';home.textContent='⌂ Hem';menu.querySelector('h2').after(home);home.onclick=()=>{guide.hidden=true;document.querySelector('#info-guide').hidden=true;menu.classList.remove('open')};
 document.querySelector('#menu-close').remove();home.textContent='🏠 Hem';document.querySelector('#menu-btn').onclick=()=>menu.classList.toggle('open');
 document.head.insertAdjacentHTML('beforeend','<style>.side-menu{padding-top:110px!important}</style>');
+document.querySelector('#menu-install').onclick=()=>{document.querySelector('#info-guide').hidden=true;guide.hidden=false;menu.classList.remove('open');guide.scrollTo(0,0)};
