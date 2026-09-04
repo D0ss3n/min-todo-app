@@ -7,3 +7,4 @@ document.head.insertAdjacentHTML('beforeend','<style>.menu-btn{z-index:60}.guide
 document.querySelector('#menu-close').remove();home.textContent='🏠 Hem';document.querySelector('#menu-btn').onclick=()=>menu.classList.toggle('open');
 document.head.insertAdjacentHTML('beforeend','<style>.side-menu{padding-top:110px!important}</style>');
 document.querySelector('#menu-install').onclick=()=>{document.querySelector('#info-guide').hidden=true;guide.hidden=false;menu.classList.remove('open');guide.scrollTo(0,0)};
+const aboutButton=document.querySelector('[data-info="about"]'),helpButton=document.querySelector('[data-info="help"]'),privacyButton=document.querySelector('[data-info="privacy"]'),installButton=document.querySelector('#menu-install');menu.querySelector('h2').after(home);home.after(installButton);installButton.after(helpButton);helpButton.after(privacyButton);privacyButton.after(aboutButton);
