@@ -31,3 +31,23 @@ if(savedPage){
   else document.querySelector(`[data-info="${savedPage}"]`)?.click();
 }
 document.documentElement.classList.remove('restoring');
+
+/* Hämtar nya appversioner även i installerat läge på iPhone. */
+if('serviceWorker' in navigator){
+  let reloadingForUpdate=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(!reloadingForUpdate){
+      reloadingForUpdate=true;
+      window.location.reload();
+    }
+  });
+  navigator.serviceWorker.register('sw.js?v=68',{updateViaCache:'none'}).then(registration=>{
+    if(registration.waiting)registration.waiting.postMessage('SKIP_WAITING');
+    registration.addEventListener('updatefound',()=>{
+      const worker=registration.installing;
+      worker?.addEventListener('statechange',()=>{
+        if(worker.state==='installed'&&navigator.serviceWorker.controller)worker.postMessage('SKIP_WAITING');
+      });
+    });
+  });
+}
