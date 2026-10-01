@@ -11,7 +11,7 @@
   const syncCard=document.createElement('section');
   syncCard.className='sync-card';syncCard.id='sync-card';
   syncCard.innerHTML='<div><b id="sync-title">☁️ Synka mellan enheter</b><small id="sync-status">Logga in för att se samma lista på telefon och dator.</small></div><button class="sync-google" id="sync-login">Fortsätt med Google</button>';
-  document.querySelector('header').after(syncCard);
+  document.querySelector('#side-menu').append(syncCard);
   const title=document.querySelector('#sync-title'),status=document.querySelector('#sync-status'),login=document.querySelector('#sync-login');
   let unsubscribe=null,remoteReady=false,applyingRemote=false,lastSyncedSignature=null;
   const plainTasks=()=>T.map(({marked,...task})=>task);
