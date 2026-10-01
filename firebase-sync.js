@@ -2,7 +2,7 @@
    åtkomsten skyddas av Firebase Authentication och Firestore-regler. */
 (()=>{
   if(!window.firebase)return;
-  const firebaseConfig={apiKey:'AIzaSyB7GHnvWDCTIRrK7vE2NjkntNE4Tb60kjQ',authDomain:'todo-list-aff74.firebaseapp.com',projectId:'todo-list-aff74',storageBucket:'todo-list-aff74.firebasestorage.app',messagingSenderId:'836194978024',appId:'1:836194978024:web:5f9679bd917810f8e5e15d'};
+  const firebaseConfig={apiKey:'AIzaSyB7gHnwaDCTIRrK7vE2NjkntNE4Tb60kjQ',authDomain:'todo-list-aff74.firebaseapp.com',projectId:'todo-list-aff74',storageBucket:'todo-list-aff74.firebasestorage.app',messagingSenderId:'836194978024',appId:'1:836194978024:web:5f9679bd917810f8e5e15d'};
   firebase.initializeApp(firebaseConfig);
   const auth=firebase.auth(),db=firebase.firestore(),provider=new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({prompt:'select_account'});
