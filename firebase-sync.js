@@ -29,8 +29,8 @@
     try{
       if(auth.currentUser){await auth.signOut();return}
       setStatus('Öppnar Google-inloggning …');
-      if(matchMedia('(max-width:700px)').matches)await auth.signInWithRedirect(provider);else await auth.signInWithPopup(provider);
-    }catch(error){console.warn('Google-inloggningen misslyckades',error);setStatus('Inloggningen kunde inte öppnas. Försök igen.')}
+      await auth.signInWithRedirect(provider);
+    }catch(error){console.warn('Google-inloggningen misslyckades',error);const message=error?.code==='auth/unauthorized-domain'?'Webbadressen saknar behörighet i Firebase. Kontrollera Authorized domains.':error?.code==='auth/network-request-failed'?'Kontrollera internetanslutningen och försök igen.':`Inloggningen kunde inte öppnas (${error?.code||'okänt fel'}).`;setStatus(message)}
   };
   auth.onAuthStateChanged(async user=>{
     if(unsubscribe){unsubscribe();unsubscribe=null}remoteReady=false;
