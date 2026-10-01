@@ -12,7 +12,7 @@
   syncCard.className='sync-card';syncCard.id='sync-card';
   syncCard.innerHTML='<div><b id="sync-title">☁️ Synka mellan enheter</b><small id="sync-status">Logga in för att se samma lista på telefon och dator.</small></div><button class="sync-google" id="sync-login">Fortsätt med Google</button>';
   document.querySelector('header').after(syncCard);
-  const status=document.querySelector('#sync-status'),login=document.querySelector('#sync-login');
+  const title=document.querySelector('#sync-title'),status=document.querySelector('#sync-status'),login=document.querySelector('#sync-login');
   let unsubscribe=null,remoteReady=false,applyingRemote=false;
   const plainTasks=()=>T.map(({marked,...task})=>task);
   const documentFor=user=>db.collection('users').doc(user.uid).collection('todo').doc('state');
@@ -29,13 +29,14 @@
     try{
       if(auth.currentUser){await auth.signOut();return}
       setStatus('Öppnar Google-inloggning …');
-      await auth.signInWithRedirect(provider);
+      await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+      if(matchMedia('(max-width:700px)').matches)await auth.signInWithRedirect(provider);else await auth.signInWithPopup(provider);
     }catch(error){console.warn('Google-inloggningen misslyckades',error);const message=error?.code==='auth/unauthorized-domain'?'Webbadressen saknar behörighet i Firebase. Kontrollera Authorized domains.':error?.code==='auth/network-request-failed'?'Kontrollera internetanslutningen och försök igen.':`Inloggningen kunde inte öppnas (${error?.code||'okänt fel'}).`;setStatus(message)}
   };
   auth.onAuthStateChanged(async user=>{
     if(unsubscribe){unsubscribe();unsubscribe=null}remoteReady=false;
-    if(!user){login.textContent='Fortsätt med Google';login.className='sync-google';setStatus('Logga in för att se samma lista på telefon och dator.');return}
-    login.textContent='Logga ut';login.className='';setStatus('Hämtar din synkade lista …');
+    if(!user){title.textContent='☁️ Synka mellan enheter';login.textContent='Fortsätt med Google';login.className='sync-google';setStatus('Logga in för att se samma lista på telefon och dator.');return}
+    title.textContent='☁️ Du är inloggad';login.textContent='Logga ut';login.className='';setStatus('Hämtar din synkade lista …');
     const ref=documentFor(user);
     try{
       const first=await ref.get();
@@ -48,4 +49,5 @@
       },error=>{console.warn('Kunde inte läsa synkad lista',error);setStatus('Synkning saknar behörighet.')});
     }catch(error){console.warn('Kunde inte starta synkning',error);setStatus('Kunde inte starta synkningen. Kontrollera internet och behörighet.')}
   });
+  auth.getRedirectResult().catch(error=>{console.warn('Kunde inte slutföra Google-inloggningen',error);setStatus(`Inloggningen kunde inte slutföras (${error?.code||'okänt fel'}).`)});
 })();
