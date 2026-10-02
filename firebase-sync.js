@@ -13,18 +13,21 @@
   syncCard.innerHTML='<div class="sync-user"><span class="sync-avatar" id="sync-avatar">☁️</span><div><b id="sync-title">Synka mellan enheter</b><small class="sync-email" id="sync-email" hidden></small><small id="sync-status">Logga in för att se samma lista på telefon och dator.</small></div></div><button class="sync-google" id="sync-login">Fortsätt med Google</button>';
   document.querySelector('#side-menu').append(syncCard);
   const title=document.querySelector('#sync-title'),email=document.querySelector('#sync-email'),avatar=document.querySelector('#sync-avatar'),status=document.querySelector('#sync-status'),login=document.querySelector('#sync-login');
-  let unsubscribe=null,remoteReady=false,applyingRemote=false,lastSyncedSignature=null;
+  let unsubscribe=null,remoteReady=false,applyingRemote=false,lastSyncedSignature=null,lastSyncedAt=Number(localStorage.getItem('todo-last-synced-at')||0);
   const plainTasks=()=>T.map(({marked,...task})=>task);
   const documentFor=user=>db.collection('users').doc(user.uid).collection('todo').doc('state');
   const setStatus=text=>status.textContent=text;
+  function showSyncStatus(){if(!navigator.onLine){setStatus('⚠️ Ingen anslutning — synkar automatiskt senare.');return}if(!lastSyncedAt){setStatus('Synkar din lista …');return}const seconds=Math.floor((Date.now()-lastSyncedAt)/1000),when=seconds<60?'nyss':seconds<3600?`för ${Math.floor(seconds/60)} min sedan`:seconds<86400?`för ${Math.floor(seconds/3600)} tim sedan`:`för ${Math.floor(seconds/86400)} dag sedan`;setStatus(`Synkad ✓ · ${when}`)}
+  function markSynced(){lastSyncedAt=Date.now();localStorage.setItem('todo-last-synced-at',String(lastSyncedAt));showSyncStatus()}
   const originalSave=save;
   async function pushState(){
     const user=auth.currentUser;
     if(!user||!remoteReady||applyingRemote)return;
+    if(!navigator.onLine){showSyncStatus();return}
     const tasks=plainTasks(),signature=JSON.stringify(tasks);
     if(signature===lastSyncedSignature)return;
     setStatus('Synkar ändringar …');
-    try{await documentFor(user).set({tasks,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});lastSyncedSignature=signature;setStatus('Synkad ✓')}catch(error){console.warn('Kunde inte synka listan',error);setStatus('Kunde inte synka just nu — ändringarna finns kvar på enheten.')}
+    try{await documentFor(user).set({tasks,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});lastSyncedSignature=signature;markSynced()}catch(error){console.warn('Kunde inte synka listan',error);setStatus('Kunde inte synka just nu — ändringarna finns kvar på enheten.')}
   }
   save=function(){originalSave();pushState()};
   login.onclick=async()=>{
@@ -38,7 +41,7 @@
   auth.onAuthStateChanged(async user=>{
     if(unsubscribe){unsubscribe();unsubscribe=null}remoteReady=false;lastSyncedSignature=null;
     if(!user){title.textContent='Synka mellan enheter';email.hidden=true;avatar.replaceChildren();avatar.textContent='☁️';login.textContent='Fortsätt med Google';login.className='sync-google';setStatus('Logga in för att se samma lista på telefon och dator.');return}
-    title.textContent='Du är inloggad';email.textContent=user.email||'';email.hidden=!user.email;avatar.replaceChildren();if(user.photoURL){const image=new Image();image.src=user.photoURL;image.alt='Din profilbild';avatar.append(image)}else avatar.textContent='👤';login.textContent='Logga ut';login.className='';setStatus('Hämtar din synkade lista …');
+    title.textContent='Du är inloggad';email.textContent=user.email||'';email.hidden=!user.email;avatar.replaceChildren();if(user.photoURL){const image=new Image();image.src=user.photoURL;image.alt='Din profilbild';avatar.append(image)}else avatar.textContent='👤';login.textContent='Logga ut';login.className='';showSyncStatus();
     const ref=documentFor(user);
     try{
       const first=await ref.get();
@@ -47,9 +50,12 @@
       unsubscribe=ref.onSnapshot(snapshot=>{
         if(!snapshot.exists)return;
         const cloudTasks=Array.isArray(snapshot.data().tasks)?snapshot.data().tasks:[];
-        lastSyncedSignature=JSON.stringify(cloudTasks);applyingRemote=true;T=cloudTasks.map(task=>({...task,marked:false}));originalSave();render();applyingRemote=false;setStatus('Synkad ✓');
+        lastSyncedSignature=JSON.stringify(cloudTasks);applyingRemote=true;T=cloudTasks.map(task=>({...task,marked:false}));originalSave();render();applyingRemote=false;markSynced();
       },error=>{console.warn('Kunde inte läsa synkad lista',error);setStatus('Synkning saknar behörighet.')});
     }catch(error){console.warn('Kunde inte starta synkning',error);setStatus('Kunde inte starta synkningen. Kontrollera internet och behörighet.')}
   });
+  window.addEventListener('offline',()=>{if(auth.currentUser)showSyncStatus()});
+  window.addEventListener('online',()=>{if(auth.currentUser){setStatus('Ansluten — synkar ändringar …');pushState()}});
+  setInterval(()=>{if(auth.currentUser)showSyncStatus()},30000);
   auth.getRedirectResult().catch(error=>{console.warn('Kunde inte slutföra Google-inloggningen',error);setStatus(`Inloggningen kunde inte slutföras (${error?.code||'okänt fel'}).`)});
 })();
