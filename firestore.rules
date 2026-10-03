@@ -5,44 +5,5 @@ service cloud.firestore {
     match /users/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
-
-    function signedIn() {
-      return request.auth != null;
-    }
-    function listPath(listId) {
-      return /databases/$(database)/documents/sharedLists/$(listId);
-    }
-    function isOwner(listId) {
-      return signedIn() && get(listPath(listId)).data.ownerId == request.auth.uid;
-    }
-    function isMember(listId) {
-      return signedIn() && exists(/databases/$(database)/documents/sharedLists/$(listId)/members/$(request.auth.uid));
-    }
-
-    match /sharedLists/{listId} {
-      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid;
-      allow read: if isOwner(listId) || isMember(listId);
-      allow update, delete: if isOwner(listId);
-
-      match /todo/{document} {
-        allow read, write: if isOwner(listId) || isMember(listId) ||
-          (signedIn() && getAfter(listPath(listId)).data.ownerId == request.auth.uid);
-      }
-      match /members/{memberId} {
-        allow read: if isOwner(listId) || (signedIn() && request.auth.uid == memberId);
-        allow create: if isOwner(listId) || (signedIn() && request.auth.uid == memberId &&
-          getAfter(/databases/$(database)/documents/sharedLists/$(listId)/invites/$(request.auth.token.email)).data.status == 'accepted' &&
-          getAfter(/databases/$(database)/documents/sharedLists/$(listId)/invites/$(request.auth.token.email)).data.recipientUid == request.auth.uid);
-        allow delete: if isOwner(listId);
-      }
-      match /invites/{inviteEmail} {
-        allow create: if isOwner(listId) && request.resource.data.email == inviteEmail;
-        allow read: if isOwner(listId) || (signedIn() && request.auth.token.email == inviteEmail);
-        allow update: if signedIn() && request.auth.token.email == inviteEmail &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','recipientUid','acceptedAt']) &&
-          request.resource.data.status == 'accepted' && request.resource.data.recipientUid == request.auth.uid;
-        allow delete: if isOwner(listId) || (signedIn() && request.auth.token.email == inviteEmail);
-      }
-    }
   }
 }
