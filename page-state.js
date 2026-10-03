@@ -149,3 +149,6 @@ newsButton.addEventListener('click',()=>setTimeout(()=>{const entry=document.cre
 /* Se till att Integritet alltid använder den uppdaterade bubbelvyn. */
 privacyButton.onclick=()=>{showPrivacyInLanguage();menu.classList.remove('open');document.querySelector('#info-guide').hidden=false;document.querySelector('#info-guide').scrollTo(0,0)};
 if(savedPage==='privacy')showPrivacyInLanguage();
+
+/* Mobil: skapa uppgiften först när alla val, inklusive datum, är gjorda. */
+document.head.insertAdjacentHTML('beforeend','<style>@media(max-width:500px){section.card:has(#form){display:flex;flex-direction:column}section.card:has(#form)>#form{display:contents}section.card:has(#form)>#form>#input{order:1}section.card:has(#form)>div:has(#add-priority){order:2}section.card:has(#form)>.add-note{order:3}section.card:has(#form)>.due-field{order:4}section.card:has(#form)>#form>.add{order:5;width:100%;margin-top:12px}section.card:has(#form)>.hint{order:6}}.side-menu{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:calc(24px + env(safe-area-inset-bottom));touch-action:pan-y}</style>');
